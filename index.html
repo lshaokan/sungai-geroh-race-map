@@ -224,6 +224,23 @@ textarea.inp{min-height:80px;resize:vertical;line-height:1.4}
 .btn.big{padding:11px 16px;font-size:15px}
 .btn:disabled{opacity:.5}
 .snap *{transition:none!important}
+#tour{position:fixed;inset:0;z-index:60}
+#tourSpot{position:fixed;border-radius:14px;box-shadow:0 0 0 9999px rgba(17,20,24,.58);transition:all .28s ease;pointer-events:none;outline:3px solid #ffc300;outline-offset:0}
+#tourSpot.none{left:50%!important;top:45%!important;width:0!important;height:0!important;outline:0}
+#tourCard{position:fixed;width:min(360px,calc(100vw - 32px));background:#fff;border-radius:16px;padding:18px;box-sizing:border-box;box-shadow:0 18px 40px -12px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:10px;transition:top .28s ease,left .28s ease}
+#tourCard .tic{width:44px;height:44px;border-radius:12px;background:#111418;color:#ffc300;display:grid;place-items:center}
+#tourCard .tic svg{width:26px;height:26px}
+#tourCard h3{margin:0;font:700 19px var(--map);line-height:1.2}
+#tourCard p{margin:0;line-height:1.45;color:#2a2f36}
+#tourCard .tnav{display:flex;align-items:center;gap:8px;margin-top:4px}
+#tourCard .tdots{display:flex;gap:4px;flex:1;flex-wrap:wrap}
+#tourCard .tdots i{width:6px;height:6px;border-radius:3px;background:#d6dce5}
+#tourCard .tdots i.on{background:#111418;width:16px}
+#tourCard .tskip{color:var(--muted);font-weight:600;font-size:13px;padding:8px 4px}
+#tourCard .tskip:hover{color:var(--ink)}
+.tourbtn{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;border-radius:10px;padding:10px 12px;background:#111418;color:#fff;font-weight:600;margin:4px 0 6px}
+.tourbtn svg{width:20px;height:20px}
+@media (prefers-reduced-motion:reduce){#tourSpot,#tourCard{transition:none}}
 .off-race .fam-race,.off-safety .fam-safety,.off-hazard .fam-hazard,.off-ink #gInk,.off-ink #gNotes{display:none}
 
 @media (max-width:999px){
@@ -291,6 +308,7 @@ textarea.inp{min-height:80px;resize:vertical;line-height:1.4}
     </div>
   </div>
   <div id="hint" class="plate fade" role="status"></div>
+  <div id="tour" hidden><div id="tourSpot"></div><div id="tourCard" role="dialog" aria-modal="true" aria-labelledby="tourT"></div></div>
   <div id="xmodal" hidden><div class="xback" id="xback"></div><div class="xpanel plate" role="dialog" aria-modal="true" aria-labelledby="xtitle" id="xpanel"></div></div>
 </div>
 <div id="ghost" hidden></div>
@@ -343,6 +361,8 @@ var IC={
  line:'<path d="M3 17c4-8 7 2 10-6s5-3 8-6" '+S+' stroke-dasharray="3 3"/>',
  pinI:'<path d="M12 21.5c-1.3-2.6-7-6.6-7-11.5a7 7 0 0 1 14 0c0 4.9-5.7 8.9-7 11.5z" '+S+'/><circle cx="12" cy="10" r="2.4" '+S+'/>',
  dl:'<path d="M12 4v11M7 10.5l5 5 5-5M5 20h14" '+S+' stroke-width="2"/>',
+ play:'<circle cx="12" cy="12" r="9" '+S+'/><path d="M10 8.5l5.5 3.5-5.5 3.5z" fill="currentColor"/>',
+ spark:'<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8" '+S+'/>',
  tap:'<circle cx="12" cy="9" r="3.5" '+S+'/><path d="M12 15v6M9 18h6" '+S+'/>'
 };
 function ico(n){return svgI(IC[n])}
@@ -959,9 +979,53 @@ function renderLayers(){var p=$("pLayers");p.textContent="";
     var cnt=L.pts.length?L.pts.length+" markers":L.lns.length+" lines";
     p.appendChild(lrow(L.id,glyph,L.name,cnt,function(){var xs=[],ys=[];L.pts.forEach(function(m){xs.push(m.x);ys.push(m.y)});L.lns.forEach(function(l){l.pts.forEach(function(q){xs.push(q[0]);ys.push(q[1])})});
       if(xs.length)zoomToBox(Math.min.apply(0,xs),Math.min.apply(0,ys),Math.max.apply(0,xs),Math.max.apply(0,ys),0.3,6);closePops()}))})}
-(function(){var p=$("pHelp");p.appendChild(h("h4",{text:"How it works"}));var g=h("div",{className:"help"});
+(function(){var p=$("pHelp");var tb=h("button",{type:"button",className:"tourbtn",html:ico("play")+"<span>Take the guided tour</span>"});tb.onclick=function(){closePops();startTour()};p.appendChild(tb);p.appendChild(h("h4",{text:"How it works"}));var g=h("div",{className:"help"});
   [["drag","Drag a counter from the dock onto the river. It settles on the nearest bank."],["tap","Tap anything on the map to see its details."],["pinI","Points tab: drop a waypoint. Tap a waypoint or marker, then tap or drag icons onto it. Give it a colour and notes."],["pen","Open Draw: Apple Pencil or mouse draws."],["finger","One finger, or drag empty map, moves the map."],["pinch","Pinch or scroll to zoom. Stacks split apart as you zoom in."],["undo","Undo reverses your last change. Ctrl+Z works too."]].forEach(function(r){g.appendChild(h("span",{html:ico(r[0])}));g.appendChild(h("span",{text:r[1]}))});
   p.appendChild(g)})();
+
+/* ---------- Guided tour ---------- */
+var TKEY="geroh-tour-done-v1",tourI=-1;
+function r3mark(){var L=LAYERS.filter(function(x){return x.id==="rapids"})[0];for(var i=0;i<L.pts.length;i++)if(L.pts[i].n==="Rapid 3")return "rapids:"+i;return null}
+var TOUR=[
+ {ic:"spark",t:"Welcome to the Sungai Geroh race map",b:"This is your planning board for the river: nine sections from Rapid 0 to Hussein Bridge. This tour takes about two minutes and shows every part, ending with the PDF export. Use Next, or the arrow keys."},
+ {ic:"help",el:".tl",t:"Status and tools",b:"The dot shows whether your changes are saved. “Live” means everyone with the map sees them. Layers, help and Export sit here too.",enter:function(){go(fitView())}},
+ {ic:"river",el:".tc",t:"The river at a glance",b:"Each block is one section, sized to its real length. Tap a number to jump there. Tents mark Murni and Nomad camps, and small pips show the start, finish, hazards and safety along the run."},
+ {ic:"section",el:"#card",t:"Section details",b:"Tapping a section, on the bar or on the river, opens its card: length, rapids, exits, everything placed there and notes for the team. The section glows yellow on the map.",enter:function(){var s=SECS[0];select({kind:"sec",id:s.id});zoomToSec(s)}},
+ {ic:"detail",el:".vstack",t:"Three zoom levels",b:"River shows the whole run. Section shows rapids and exits. Detail shows every landmark. You can also pinch or scroll to zoom, and drag the map to move it.",enter:function(){select(null)}},
+ {ic:"star",el:"#card",t:"Markers from your Google map",b:"Tap any marker to read its note, like this one at Rapid 3. You can give it a colour, attach icons such as a lifeguard or a hazard, and add your own notes.",enter:function(){var id=r3mark();if(id){select({kind:"mark",id:id});var m=markById(id);go(centreOn(m.x,m.y,Math.max(view.k,kfit*3.2)))}}},
+ {ic:"layers",el:"#pLayers",t:"Layers",b:"Switch groups of markers on or off. “Hide old 2014–2016 markers” keeps the old stations out of the way. The target button next to a layer flies the map to it.",enter:function(){select(null);closePops();$("pLayers").hidden=false;$("bLayers").setAttribute("aria-expanded","true");renderLayers()}},
+ {ic:"race",el:"#dock",t:"Race kit",b:"Drag a counter from the dock onto the river. It settles on the nearest bank: river-left, mid-river or river-right. Counters that overlap stack into a numbered disc; tap it to split them.",enter:function(){closePops();setTab("race")}},
+ {ic:"safety",el:"#dock",t:"Safety",b:"Ambulances, first aid, lifeguards, reach poles and throw ropes. Tap any counter on the map to label it, move it to the other bank, duplicate it or remove it.",enter:function(){setTab("safety")}},
+ {ic:"hazard",el:"#dock",t:"Hazards",b:"Strainers, debris, sharp rocks and wires are yellow diamonds, so they stand out from everything else on the board.",enter:function(){setTab("hazard")}},
+ {ic:"pinI",el:"#dock",t:"Waypoints",b:"Drop a waypoint anywhere, name it and pick a colour. Then tap it and tap or drag icons onto it, like Rest, Water or a hazard. Drag a chip out of its card to take it off.",enter:function(){setTab("point")}},
+ {ic:"pen",el:"#dock",t:"Draw on the map",b:"Apple Pencil or the mouse draws while your finger still moves the map. Choose pen, marker, arrow, text note or eraser in six colours. Tap ✕ or press Esc to stop drawing.",enter:function(){setTab("draw")}},
+ {ic:"undo",el:".undo",t:"Undo",b:"Reverses your last change: a placed counter, a move, a drawing, an icon. Ctrl+Z works too.",enter:function(){setTool(null);setTab("race")}},
+ {ic:"dl",el:"#bExport",t:"Export a briefing",b:"Makes a PDF for the briefing: the whole river first, then one page per section with everything placed and all team notes.",enter:function(){closeExport()}},
+ {ic:"dl",el:"#xpanel",t:"Set today's conditions",b:"Pick the river level, weather, number of hazards and flash flood risk. They print as big coloured boxes on page one. Then press Download PDF.",enter:function(){openExport()}},
+ {ic:"play",t:"You're ready",b:"Replay this tour any time from the ? button. On the shared Claude link your changes reach the whole team; on the website they stay on your device.",enter:function(){closeExport();go(fitView())}}
+];
+function startTour(){closeExport();closePops();setArmed(null);setTool(null);tourI=-1;$("tour").hidden=false;tourGo(0)}
+function endTour(){$("tour").hidden=true;tourI=-1;try{localStorage.setItem(TKEY,"1")}catch(_){}closePops();closeExport();select(null);setTab("race");go(fitView())}
+function tourGo(i){if(i<0)return;if(i>=TOUR.length){endTour();return}tourI=i;var st=TOUR[i];if(st.enter)st.enter();
+  var c=$("tourCard");c.textContent="";c.appendChild(h("div",{className:"tic",html:ico(st.ic)}));c.appendChild(h("h3",{id:"tourT",text:st.t}));c.appendChild(h("p",{text:st.b}));
+  var dots=h("div",{className:"tdots","aria-label":"Step "+(i+1)+" of "+TOUR.length});TOUR.forEach(function(_,j){dots.appendChild(h("i",{className:j===i?"on":""}))});
+  var nav=h("div",{className:"tnav"},[dots]);if(i>0){var bk=h("button",{type:"button",className:"btn",text:"Back"});bk.onclick=function(){tourGo(i-1)};nav.appendChild(bk)}
+  else{var sk=h("button",{type:"button",className:"tskip",text:"Skip tour"});sk.onclick=endTour;nav.appendChild(sk)}
+  var nx=h("button",{type:"button",className:"btn primary",text:i===TOUR.length-1?"Start planning":"Next"});nx.onclick=function(){tourGo(i+1)};nav.appendChild(nx);c.appendChild(nav);
+  if(i>0&&i<TOUR.length-1){var x=h("button",{type:"button",className:"tskip",text:"End tour",style:"align-self:flex-start;margin:-6px 0 -8px -4px"});x.onclick=endTour;c.appendChild(x)}
+  setTimeout(placeTour,40);setTimeout(placeTour,360);setTimeout(function(){nx.focus()},60)}
+function placeTour(){if(tourI<0)return;var st=TOUR[tourI],sp=$("tourSpot"),c=$("tourCard"),vw=window.innerWidth,vh=window.innerHeight,cw=c.offsetWidth,ch=c.offsetHeight,pad=6,el=st.el&&document.querySelector(st.el),r=el&&el.getClientRects().length?el.getBoundingClientRect():null;
+  if(!r){sp.className="none";c.style.left=Math.round((vw-cw)/2)+"px";c.style.top=Math.round((vh-ch)/2)+"px";return}
+  sp.className="";sp.style.left=(r.left-pad)+"px";sp.style.top=(r.top-pad)+"px";sp.style.width=(r.width+pad*2)+"px";sp.style.height=(r.height+pad*2)+"px";
+  var g=14,x,y;
+  if(vh-r.bottom-g>=ch+8){y=r.bottom+g;x=r.left+r.width/2-cw/2}
+  else if(r.top-g>=ch+8){y=r.top-g-ch;x=r.left+r.width/2-cw/2}
+  else if(vw-r.right-g>=cw+8){x=r.right+g;y=r.top+r.height/2-ch/2}
+  else if(r.left-g>=cw+8){x=r.left-g-cw;y=r.top+r.height/2-ch/2}
+  else{x=(vw-cw)/2;y=vh-ch-16}
+  c.style.left=Math.round(Math.max(16,Math.min(vw-cw-16,x)))+"px";c.style.top=Math.round(Math.max(12,Math.min(vh-ch-12,y)))+"px"}
+window.addEventListener("resize",function(){if(tourI>=0)placeTour()});
+document.addEventListener("keydown",function(e){if(tourI<0)return;if(e.key==="ArrowRight"){e.preventDefault();tourGo(tourI+1)}else if(e.key==="ArrowLeft"){e.preventDefault();tourGo(tourI-1)}else if(e.key==="Escape"){e.preventDefault();e.stopImmediatePropagation();endTour()}},true);
 
 /* ---------- Static control icons ---------- */
 document.querySelector(".compass").innerHTML='<svg viewBox="-17 -17 34 34" aria-hidden="true"><circle r="15.5" fill="none" stroke="#d6dce5"/><path d="M0-12L4.5 1H-4.5Z" fill="#d7263d"/><path d="M0 12L4.5 1H-4.5Z" fill="#c8d0db"/><text y="-4" text-anchor="middle" fill="#fff" style="font:700 6px var(--map)" dy="0">N</text></svg>';
@@ -1127,6 +1191,7 @@ function startShared(store_){db=store_;items=new Map();notes={};ink=new Map();wp
 /* ---------- Boot ---------- */
 loadLocal();renderTabs();renderTray();updUndo();applyLayers();
 view=fitView();apply();renderInk();renderPins();renderCard();setStatus("Saved on this device","");
+try{if(!localStorage.getItem(TKEY))setTimeout(function(){if(tourI<0&&$("xmodal").hidden)startTour()},1400)}catch(_){}
 if(window.ResizeObserver)new ResizeObserver(function(){var old=kfit,f=fitView();if(!touched)view=f;else view.k=kfit*(view.k/old);apply()}).observe(svg);
 if(window.claude&&window.claude.use){
   Promise.all([window.claude.use("db"),window.claude.use("user")]).then(function(r){var st=r[0],user=r[1];if(!st)return;
