@@ -2,6 +2,8 @@
 
 A planning board for the Sungai Geroh tube race: the river from Rapid 0 to Hussein Bridge in nine sections, every marker from the team's Google My Map as toggleable layers, drag-on counters (race kit, safety, hazards), waypoints with attached icons and notes, Apple Pencil drawing, and a PDF briefing export.
 
+Live site: https://wwsc-river-map.netlify.app
+
 It is a single static page (`index.html`) with no build step.
 
 ## Saving
@@ -11,6 +13,6 @@ It is a single static page (`index.html`) with no build step.
 
 ## Deploy
 
-Netlify serves the folder as-is (`netlify.toml` publishes the repository root).
+Netlify serves the folder as-is (`netlify.toml` publishes the repository root). Every push to `main` redeploys the live site.
 
 For planning, not navigation.
