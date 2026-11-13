@@ -57,6 +57,26 @@ button:disabled{cursor:default}
 .status{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);margin-top:2px}
 .status i{width:7px;height:7px;border-radius:50%;background:var(--faint)}
 .status.ok i{background:var(--go)}
+.tl{flex-wrap:wrap}
+.latest{order:10;flex-basis:100%;display:flex;align-items:center;gap:8px;margin:6px -2px 0 -6px;padding:8px 10px;border-radius:10px;background:#eef1f6;text-align:left;font-size:13px;color:var(--ink);min-height:40px;box-sizing:border-box}
+.latest svg{width:18px;height:18px;flex:none}
+.latest b{font-weight:700;white-space:nowrap}.latest span{color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.latest i{font-style:normal;font-weight:700;color:var(--accent)}
+@media (hover:hover){.latest:hover{background:#e3e8f0}}
+@media (max-width:520px){.tl .ib,.tl .xbtn{width:40px;min-width:40px;height:40px;padding:0}.tl .ib svg{width:20px;height:20px}.brand{margin-right:2px}.brand b{font-size:14px}.status{font-size:10.5px}
+  .latest{min-height:40px;padding:6px 8px;margin:4px 0 0 4px;font-size:12px;flex:1 1 0;min-width:0;order:10}
+  .tl::after{content:"";flex-basis:100%;height:0;order:8}
+  .tl .rbtn{order:9;margin-top:4px;margin-left:-6px}}
+@media (max-height:720px) and (max-width:999px) and (min-height:501px){#card{max-height:30vh}}
+.lboxes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.lbox{border:2px solid #111418;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-height:78px;box-sizing:border-box}
+.lbox small{font:700 10.5px var(--ui);letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+.lbox b{font:700 21px var(--map);line-height:1.1}
+.lbox span{font-size:12.5px;opacity:.9;line-height:1.3}
+.lhist{display:flex;flex-direction:column;gap:6px}
+.lhist button{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:10px;background:#f1f3f7;text-align:left;font-size:13.5px}
+.lhist button.on{background:#fff6d6;box-shadow:inset 0 0 0 2px #ffc300}
+.lnote{font-size:12.5px;color:var(--muted);line-height:1.4}
 .status.join{cursor:pointer;text-decoration:underline;text-underline-offset:2px} .status.warn i{background:var(--hazard)}
 .ib{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:var(--ink)}
 @media (hover:hover){.ib:hover,.ib[aria-expanded="true"]{background:var(--hover)}}
@@ -211,7 +231,7 @@ textarea.inp{min-height:80px;resize:vertical;line-height:1.4}
 .xbtn{display:flex;align-items:center;gap:6px;height:36px;padding:0 12px 0 10px;border-radius:10px;background:var(--ink);color:#fff;font:600 13px var(--ui);margin-left:4px;white-space:nowrap}
 .xbtn svg{width:18px;height:18px}
 @media (hover:hover){.xbtn:hover{background:#2a2f36}}
-#xmodal,#jmodal{position:absolute;inset:0;z-index:40;display:grid;place-items:center;padding:16px;box-sizing:border-box}
+#xmodal,#jmodal,#lmodal{position:absolute;inset:0;z-index:40;display:grid;place-items:center;padding:16px;box-sizing:border-box}
 .xback{position:absolute;inset:0;background:rgba(17,20,24,.38)}
 .xpanel{position:relative;width:min(560px,100%);max-height:100%;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:16px;box-sizing:border-box;background:#fff}
 .xpanel h2{margin:0;font:700 20px var(--map)}
@@ -415,6 +435,7 @@ html,body{overscroll-behavior:none}
       <button class="ib" id="bHelp" type="button" aria-label="How to use" title="How to use" aria-expanded="false"></button>
       <button class="xbtn" id="bExport" type="button" title="Export a PDF briefing"></button>
       <button class="xbtn rbtn" id="bRiver" type="button" title="River mode: report from the water with GPS"></button>
+      <button class="latest" id="bLatest" type="button" title="Latest briefing"></button>
       <div class="pop plate" id="pLayers" hidden></div>
       <div class="pop plate" id="pHelp" hidden></div>
     </div>
@@ -441,6 +462,7 @@ html,body{overscroll-behavior:none}
   </div>
   <div id="hint" class="plate fade" role="status"></div>
   <div id="river" hidden></div>
+  <div id="lmodal" hidden><div class="xback" id="lback"></div><div class="xpanel plate" id="lpanel" role="dialog" aria-modal="true" aria-labelledby="ltitle"></div></div>
   <div id="jmodal" hidden><div class="xback" onclick="this.parentNode.hidden=true"></div><div class="xpanel plate" id="jpanel" role="dialog" aria-modal="true"></div></div>
   <div id="tour" hidden><div id="tourSpot"></div><div id="tourArrow" hidden><svg viewBox="0 0 28 38" width="28" height="38" aria-hidden="true"><path d="M14 2L26 16H18V36H10V16H2Z" fill="#ffc300" stroke="#111418" stroke-width="2" stroke-linejoin="round"/></svg><span></span></div><div id="tourCard" role="dialog" aria-modal="true" aria-labelledby="tourT"></div></div>
   <div id="xmodal" hidden><div class="xback" id="xback"></div><div class="xpanel plate" role="dialog" aria-modal="true" aria-labelledby="xtitle" id="xpanel"></div></div>
@@ -463,7 +485,9 @@ var LAYERS=[{"id":"rapids","name":"Middle Geroh rapids","on":true,"pts":[{"n":"R
 var BRIDGES=(function(){var out=[];for(var i=0;i<EXPWAY.length-1;i++)for(var j=0;j<P.length-1;j++){var a=EXPWAY[i],b=EXPWAY[i+1],c=P[j],d=P[j+1],
   r=[b[0]-a[0],b[1]-a[1]],q=[d[0]-c[0],d[1]-c[1]],den=r[0]*q[1]-r[1]*q[0];if(!den)continue;var t=((c[0]-a[0])*q[1]-(c[1]-a[1])*q[0])/den,u=((c[0]-a[0])*r[1]-(c[1]-a[1])*r[0])/den;
   if(t>=0&&t<=1&&u>=0&&u<=1)out.push({x:a[0]+t*r[0],y:a[1]+t*r[1],j:j,ang:Math.atan2(r[1],r[0])*180/Math.PI})}return out})();
-LAYERS.unshift({id:"feat",name:"River features",on:true,lns:[],pts:BRIDGES.map(function(bq){return{n:"Expressway bridge",k:"bridge",x:Math.round(bq.x*10)/10,y:Math.round(bq.y*10)/10,lv:1,l:[14,4,"start"],
+LAYERS.unshift({id:"feat",name:"River features",on:true,lns:[],pts:BRIDGES.map(function(bq){var ra=bq.ang*Math.PI/180,cand=[[bq.x+Math.cos(ra)*24,bq.y+Math.sin(ra)*24],[bq.x-Math.cos(ra)*24,bq.y-Math.sin(ra)*24]];
+  function clr(pp){var m=1e9;LAYERS.forEach(function(L){L.pts.forEach(function(q){m=Math.min(m,Math.hypot(q.x-pp[0],q.y-pp[1]))})});return m}
+  var bp=clr(cand[0])>=clr(cand[1])?cand[0]:cand[1];return{n:"Expressway bridge",k:"bridge",x:Math.round(bp[0]*10)/10,y:Math.round(bp[1]*10)/10,lv:1,l:[14,4,"start"],
   note:"The river passes under the North–South Expressway (E1) bridge here, between Murni Camp and Nomad. Check the bridge piers for snagged debris before race day."}})});
 var NS="http://www.w3.org/2000/svg",MPU=2.23;
 function $(id){return document.getElementById(id)}
@@ -507,6 +531,7 @@ var IC={
  spark:'<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8" '+S+'/>',
  ok:'<path d="M5 12.5l4.5 4.5L19 7.5" '+S+' stroke-width="2.4"/>',
  camera:'<path d="M3 8.5A2 2 0 0 1 5 6.5h2.2l1.4-2h6.8l1.4 2H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" '+S+'/><circle cx="12" cy="13" r="3.6" '+S+'/>',
+ clock:'<circle cx="12" cy="12" r="9" '+S+'/><path d="M12 7v5.2l3.4 2" '+S+'/>',
  tap:'<circle cx="12" cy="9" r="3.5" '+S+'/><path d="M12 15v6M9 18h6" '+S+'/>'
 };
 function ico(n){return svgI(IC[n])}
@@ -1157,6 +1182,7 @@ function openText(cx,cy,w){var ex=$("tinput");if(ex)ex.remove();var a=$("app").g
 document.addEventListener("keydown",function(e){var tag=(e.target.tagName||"").toLowerCase();if(tag==="input"||tag==="textarea")return;
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){e.preventDefault();if(canWrite)undo();return}
   if(e.key==="Escape"&&!$("xmodal").hidden){closeExport();return}
+  if(e.key==="Escape"&&!$("lmodal").hidden){closeLatest();return}
   if(e.key==="Escape"&&!$("pview").hidden){$("pview").hidden=true;return}
   if(e.key==="Escape"&&riverOn){if(!rvEl("rvSheet").hidden)rvEl("rvSheet").hidden=true;else exitRiver();return}
   if(e.key==="Escape"){if(armed||tool){setArmed(null);setTool(null);if(tab==="draw")renderTray()}else select(null);closePops()}
@@ -1164,7 +1190,7 @@ document.addEventListener("keydown",function(e){var tag=(e.target.tagName||"").t
 
 /* ---------- Popovers: layers + help ---------- */
 function closePops(){["pLayers","pHelp"].forEach(function(id){$(id).hidden=true});$("bLayers").setAttribute("aria-expanded","false");$("bHelp").setAttribute("aria-expanded","false")}
-function togglePop(id,btnId){var p=$(id),open=p.hidden;closePops();if(open){p.hidden=false;$(btnId).setAttribute("aria-expanded","true");if(id==="pLayers")renderLayers()}}
+function togglePop(id,btnId){var p=$(id),open=p.hidden;closePops();if(open){p.hidden=false;$(btnId).setAttribute("aria-expanded","true");if(id==="pLayers")renderLayers();p.style.maxHeight="";var q=p.getBoundingClientRect();if(q.bottom>innerHeight-10)p.style.maxHeight=Math.max(160,innerHeight-q.top-12)+"px"}}
 $("status").addEventListener("click",function(){if(fbFs&&!canWrite)joinSheet()});$("bLayers").innerHTML=ico("layers");$("bHelp").innerHTML=ico("help");
 $("bLayers").onclick=function(e){e.stopPropagation();togglePop("pLayers","bLayers")};
 $("bHelp").onclick=function(e){e.stopPropagation();togglePop("pHelp","bHelp")};
@@ -1530,7 +1556,7 @@ var TKEY="geroh-tour-done-v1",tourI=-1;
 function r3mark(){var L=LAYERS.filter(function(x){return x.id==="rapids"})[0];for(var i=0;i<L.pts.length;i++)if(L.pts[i].n==="Rapid 3")return "rapids:"+i;return null}
 var TOUR=[
  {ic:"spark",art:0,t:"Welcome to the Sungai Geroh race map",b:"This is your planning board for the river: nine sections from Rapid 0 to Hussein Bridge. This tour takes about two minutes and shows every part, ending with the PDF export. Use Next, or the arrow keys."},
- {ic:"help",el:".tl",art:null,t:"Status and tools",wide:true,gap:58,b:"The dot under the title shows whether your changes are saved. Next to it are three tools:",list:[["layers","Layers","Switch groups of markers, the satellite photo and the old 2014 markers on or off.","#bLayers"],["help","Tutorial","Replay this tour any time, plus quick tips.","#bHelp"],["dl","Export","Make the PDF briefing with today’s conditions.","#bExport"]],enter:function(){go(fitView())}},
+ {ic:"help",el:".tl",art:null,t:"Status and tools",wide:true,gap:58,b:"The dot under the title shows whether your changes are saved. Around it are four tools:",list:[["layers","Layers","Switch groups of markers, the satellite photo and the old 2014 markers on or off.","#bLayers"],["help","Tutorial","Replay this tour any time, plus quick tips.","#bHelp"],["dl","Export","Make the PDF briefing with today’s conditions and your name as the reporter.","#bExport"],["clock","Latest briefing","Anyone can open the most recent briefing, see who made it and when, and download it.","#bLatest"]],enter:function(){go(fitView())}},
  {ic:"river",el:".tc",art:2,t:"The river at a glance",b:"Each block is one section, sized to its real length. Tap a number to jump there. Tents mark Murni and Nomad camps, and small pips show the start, finish, hazards and safety along the run."},
  {ic:"detail",el:".vstack",art:4,t:"Three zoom levels",b:"River shows the whole run. Section shows rapids and exits. Detail shows every landmark. You can also pinch or scroll to zoom, and drag the map to move it.",enter:function(){select(null)}},
  {ic:"star",el:"#card",art:5,t:"Markers from your Google map",b:"Tap any marker to read its note, like this one at Rapid 3. You can give it a colour, attach icons such as a lifeguard or a hazard, and add your own notes.",enter:function(){var id=r3mark();if(id){select({kind:"mark",id:id});var m=markById(id);go(centreOn(m.x,m.y,Math.max(view.k,kfit*3.2)))}}},
@@ -1616,6 +1642,9 @@ function renderExport(msg){var pnl=$("xpanel"),keep=document.activeElement&&docu
   function group(title,hint,list,key){var g=h("div",{className:"xg"},[h("h5",{},[title,hint?h("span",{text:hint}):null])]),row=h("div",{className:"opts",role:"group","aria-label":title});
     list.forEach(function(o){var b=h("button",{type:"button",className:"opt","aria-pressed":String(brief[key]===o[0]),disabled:!canWrite},[h("i"),o[1]]);b.querySelector("i").style.background=o[2];
       b.style.setProperty("--oc",o[2]);b.style.setProperty("--of",o[3]);b.onclick=function(){brief[key]=brief[key]===o[0]?"":o[0];saveBrief(true);renderExport()};row.appendChild(b)});g.appendChild(row);return g}
+  var rb=h("input",{type:"text",className:"inp",id:"rep-by",maxLength:30,value:myName,placeholder:"Your name",autocomplete:"name"});
+  rb.addEventListener("input",function(){myName=rb.value.trim();try{localStorage.setItem("geroh-name",myName)}catch(_){}});
+  pnl.appendChild(h("div",{className:"xg"},[h("h5",{text:"Reported by"}),rb]));
   pnl.appendChild(group("River level","",RIVER,"river"));
   var wg=h("div",{className:"xg"},[h("h5",{text:"Weather forecast"})]),wr=h("div",{className:"opts"});
   WX.forEach(function(w){var b=h("button",{type:"button",className:"opt","aria-pressed":String(brief.weather===w),disabled:!canWrite,text:w});b.style.setProperty("--oc","#111418");b.style.setProperty("--of","#fff");
@@ -1626,7 +1655,7 @@ function renderExport(msg){var pnl=$("xpanel"),keep=document.activeElement&&docu
   pnl.appendChild(group("Risk of flash flood","",FLOOD,"flood"));
   var go2=h("button",{type:"button",className:"btn primary big",id:"xgo",html:ico("dl")+"<span>Download PDF</span>",disabled:exporting});go2.onclick=doExport;
   pnl.appendChild(h("div",{className:"xfoot"},[h("span",{className:"xmsg",id:"xmsg",text:msg||(1+SECS.length+Math.ceil(photoCount()/6))+" pages · A4 landscape"}),go2]))}
-function setXmsg(t){var m=$("xmsg");if(m)m.textContent=t}
+function setXmsg(t){var m=$("xmsg");if(m&&!$("xmodal").hidden)m.textContent=t;var l=$("lmsg");if(l&&!$("lmodal").hidden)l.textContent=t}
 var jsLoad=null;
 function loadJsPDF(){if(window.jspdf)return Promise.resolve();if(jsLoad)return jsLoad;
   jsLoad=new Promise(function(res,rej){var sc=document.createElement("script");sc.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";sc.onload=function(){res()};sc.onerror=function(){jsLoad=null;rej(new Error("The PDF library did not load. Check your connection."))};document.head.appendChild(sc)});return jsLoad}
@@ -1659,18 +1688,20 @@ function sectionFacts(s){var o={rapids:[],exits:[],marks:[],counts:{},wps:[]};
   items.forEach(function(it){var t=TYPE[it.type];if(!t||!layerOn[t.fam])return;var r=onRiver(it.x,it.y);if(r.d>60||secOfIdx(r.i)!==s)return;o.counts[it.type]=(o.counts[it.type]||0)+1});
   if(layerOn.wp)wps.forEach(function(w){var r=onRiver(w.x,w.y);if(r.d>150||secOfIdx(r.i)!==s)return;o.wps.push(w)});return o}
 function iconList(icons){var c={},ord=[];icons.forEach(function(t){if(!TYPE[t])return;if(!c[t]){c[t]=0;ord.push(t)}c[t]++});return ord.map(function(t){return TYPE[t].name+(c[t]>1?" x"+c[t]:"")}).join(", ")}
-async function doExport(){if(exporting)return;exporting=true;var b=$("xgo");if(b)b.disabled=true;
+async function doExport(opts){opts=opts&&opts.snap?opts:{};if(exporting)return;
+  if(!opts.snap){var rbi=$("rep-by"),nm=(rbi?rbi.value:myName||"").trim();if(!nm){setXmsg("Add your name under Reported by first.");if(rbi)rbi.focus();return}myName=nm;try{localStorage.setItem("geroh-name",nm)}catch(_){}}
+  exporting=true;var b=$("xgo");if(b)b.disabled=true;var lb=$("lgo");if(lb)lb.disabled=true;var restore=opts.snap?useSnap(opts.snap,opts.brief):null,byName=opts.by||myName;
   try{var dl=null;if(window.claude&&window.claude.use){try{dl=await window.claude.use("downloads")}catch(_){dl=null}}
     setXmsg("Loading the PDF maker…");await loadJsPDF();
     var JS=window.jspdf.jsPDF,doc=new JS({orientation:"landscape",unit:"mm",format:"a4"}),PW=297,M=10,CW=PW-2*M;
-    var now=new Date(),dstr=now.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"}),tstr=now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+    var now=opts.at?new Date(opts.at):new Date(),dstr=now.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"}),tstr=now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
     function head(title,sub){doc.setFillColor(17,20,24);doc.rect(0,0,PW,16,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(15);doc.text(pdfText(title),M,10.5);
       doc.setFont("helvetica","normal");doc.setFontSize(9.5);doc.text(pdfText(sub),PW-M,10.5,{align:"right"});doc.setTextColor(17,20,24)}
     function box(x,y,w,hh,label,val,fill,fg,extra){doc.setFillColor.apply(doc,rgb(fill));doc.setDrawColor(17,20,24);doc.setLineWidth(.6);doc.roundedRect(x,y,w,hh,2.5,2.5,"FD");
       doc.setTextColor.apply(doc,rgb(fg));doc.setFont("helvetica","bold");doc.setFontSize(8);doc.text(label.toUpperCase(),x+4,y+6.5);
       doc.setFontSize(val.length>12?14:18);doc.text(pdfText(val),x+4,y+17);if(extra){doc.setFont("helvetica","normal");doc.setFontSize(8);doc.text(doc.splitTextToSize(pdfText(extra),w-8).slice(0,2),x+4,y+23)}doc.setTextColor(17,20,24)}
     /* page 1 */
-    head("Sungai Geroh river briefing","Exported "+dstr+", "+tstr);
+    head("Sungai Geroh river briefing","Exported "+dstr+", "+tstr+"  |  Reported by "+byName);
     var bw=(CW-4*4)/5,by=21,bh=29,ro=optOf(RIVER,brief.river),ho=optOf(HAZ,brief.hazards),fo=optOf(FLOOD,brief.flood),hc=hazCount();
     box(M,by,bw,bh,"Export date",now.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}),"#111418","#ffffff",now.toLocaleDateString("en-GB",{weekday:"long"})+", "+tstr);
     box(M+(bw+4),by,bw,bh,"River level",ro?ro[1]:"Not set",ro?ro[2]:"#ffffff",ro?ro[3]:"#5b6573");
@@ -1717,13 +1748,57 @@ async function doExport(){if(exporting)return;exporting=true;var b=$("xgo");if(b
         if(P2.notes){doc.setTextColor(17,20,24);doc.text(doc.splitTextToSize(pdfText(P2.notes),pcw).slice(0,3),cx,yy+0.6)}}}
     var np=doc.getNumberOfPages();for(var pg=1;pg<=np;pg++){doc.setPage(pg);doc.setFontSize(8);doc.setTextColor(152,162,176);doc.text("Page "+pg+" of "+np+"  |  Sungai Geroh race map  |  For planning, not navigation",PW-M,207,{align:"right"})}
     var blob=doc.output("blob"),fname="Sungai-Geroh-briefing-"+now.toISOString().slice(0,10)+".pdf";window.__lastPdf=blob;
+    if(!opts.snap){var tot2={race:0,safety:0,hazard:0};items.forEach(function(it){var t=TYPE[it.type];if(t&&tot2[t.fam]!=null)tot2[t.fam]++});
+      saveReport({at:now.getTime(),by:byName,brief:Object.assign({},brief),counts:{race:tot2.race,safety:tot2.safety,hazard:hazCount(),wps:wps.size,ink:ink.size,photos:photoCount()},snap:makeSnap()})}
     if(!dl){try{var u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=fname;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000);setXmsg("Downloaded "+fname)}
       catch(_){setXmsg("The PDF is ready, but this view can't save files.")}return}
     setXmsg("Confirm the download…");await dl.save({filename:fname,data:blob});setXmsg("Saved "+fname);
   }catch(e){setXmsg(e&&e.code==="declined"?"Download cancelled.":e&&e.code==="rate_limited"?"A download prompt is already open.":"Could not export: "+(e&&e.message||"unknown error"))}
-  finally{exporting=false;var b2=$("xgo");if(b2)b2.disabled=false}}
+  finally{if(restore)restore();exporting=false;var b2=$("xgo");if(b2)b2.disabled=false;var lb2=$("lgo");if(lb2)lb2.disabled=false}}
 $("camIn").addEventListener("change",onPhotoPicked);$("picIn").addEventListener("change",onPhotoPicked);$("pview").addEventListener("click",function(e){if(e.target.tagName!=="IMG")$("pview").hidden=true});
 $("bExport").innerHTML=ico("dl")+"<span>Export</span>";$("bRiver").innerHTML=svgI('<path d="M2 9c3 0 3-2 6-2s3 2 6 2 3-2 6-2M2 15c3 0 3-2 6-2s3 2 6 2 3-2 6-2" '+S+' stroke-width="2.2"/>')+"<span>River mode</span>";$("bRiver").onclick=enterRiver;$("bExport").onclick=openExport;$("xback").onclick=closeExport;
+
+/* ---------- Latest briefing: every export is kept with a frozen copy of the plan ---------- */
+var reports=[],lSel=0;
+try{(JSON.parse(localStorage.getItem("geroh-reports")||"[]")||[]).forEach(function(r){var c=cleanReport(r.id,r);if(c)reports.push(c)})}catch(_){}
+function cleanReport(id,v){if(!v||!num(v.at,0))return null;var c=v.counts||{};function n(x){return Math.max(0,Math.round(num(x,0)))}
+  return{id:id||("r"+v.at),at:num(v.at,0),by:typeof v.by==="string"&&v.by.trim()?v.by.slice(0,30):"Someone",brief:cleanBrief(v.brief),counts:{race:n(c.race),safety:n(c.safety),hazard:n(c.hazard),wps:n(c.wps),ink:n(c.ink),photos:n(c.photos)},snap:v.snap&&typeof v.snap==="object"?v.snap:null}}
+function makeSnap(){var o={items:[],wps:[],ink:[],notes:Object.assign({},notes),mo:JSON.parse(JSON.stringify(mo)),layers:Object.assign({},layerOn)};
+  items.forEach(function(it){var b2=body(it);b2.id=it.id;o.items.push(b2)});wps.forEach(function(w,id){var b2=wpBody(w);b2.id=id;o.wps.push(b2)});ink.forEach(function(d,id){o.ink.push({id:id,d:d})});
+  if(JSON.stringify(o).length>800000)o.ink=[];return o}
+function useSnap(sn,br){var bk={items:items,wps:wps,ink:ink,notes:notes,mo:mo,brief:brief,layers:Object.assign({},layerOn)};
+  items=new Map();(sn.items||[]).forEach(function(v){var c=cleanItem(v.id,v);if(c)items.set(c.id,c)});
+  wps=new Map();(sn.wps||[]).forEach(function(v){var c=cleanWp(v.id,v);if(c)wps.set(c.id,c)});
+  ink=new Map();(sn.ink||[]).forEach(function(e){var c=e&&cleanInk(e.d);if(c)ink.set(e.id,c)});
+  notes=sn.notes&&typeof sn.notes==="object"?sn.notes:{};mo={};for(var k in (sn.mo||{})){var c2=cleanMx(sn.mo[k]);if(c2)mo[k]=c2}
+  if(br)brief=cleanBrief(br);if(sn.layers)for(var k2 in sn.layers)if(k2 in layerOn)layerOn[k2]=!!sn.layers[k2];
+  applyLayers();renderItems();renderPins();renderInk();
+  return function(){items=bk.items;wps=bk.wps;ink=bk.ink;notes=bk.notes;mo=bk.mo;brief=bk.brief;for(var k3 in bk.layers)layerOn[k3]=bk.layers[k3];applyLayers();renderItems();renderPins();renderInk();renderCard()}}
+function saveReport(r){r.id="r"+r.at;reports=[r].concat(reports.filter(function(x){return x.id!==r.id})).slice(0,6);
+  if(db)store("reports",r.id,{at:r.at,by:r.by,brief:r.brief,counts:r.counts,snap:r.snap});else saveReportsLocal();renderLatestBar()}
+function saveReportsLocal(){try{localStorage.setItem("geroh-reports",JSON.stringify(reports))}catch(_){try{localStorage.setItem("geroh-reports",JSON.stringify(reports.slice(0,1)))}catch(__){}}}
+function fmtWhen(ms,long){var d=new Date(ms);return d.toLocaleDateString("en-GB",long?{weekday:"short",day:"numeric",month:"short",year:"numeric"}:{day:"numeric",month:"short"})+", "+d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}
+function renderLatestBar(){var b=$("bLatest");if(!b)return;var r=reports[0];b.innerHTML=ico("clock")+"<b>Latest briefing</b><span></span><i>›</i>";
+  b.querySelector("span").textContent=r?fmtWhen(r.at)+" · "+r.by:"none exported yet";if(!$("lmodal").hidden)renderLatest()}
+function openLatest(){closePops();lSel=0;$("lmodal").hidden=false;renderLatest()}
+function closeLatest(){if(exporting)return;$("lmodal").hidden=true}
+function renderLatest(){var pnl=$("lpanel");pnl.textContent="";var r=reports[lSel]||reports[0];
+  var cb=closeBtn();cb.onclick=closeLatest;pnl.appendChild(h("div",{className:"chead"},[h("h2",{id:"ltitle",text:lSel?"Earlier briefing":"Latest briefing"}),h("span",{style:"flex:1"}),cb]));
+  if(!r){pnl.appendChild(h("p",{text:"No briefing has been exported yet. Use Export to make the first one; it will show up here for everyone."}));return}
+  pnl.appendChild(h("p",{text:"Exported "+fmtWhen(r.at,true)+" · Reported by "+r.by}));
+  var ro=optOf(RIVER,r.brief.river),ho=optOf(HAZ,r.brief.hazards),fo=optOf(FLOOD,r.brief.flood),d=new Date(r.at);
+  function box(label,val,bg,fg,extra){var bx=h("div",{className:"lbox"},[h("small",{text:label}),h("b",{text:val}),extra?h("span",{text:extra}):null]);bx.style.background=bg;bx.style.color=fg;return bx}
+  pnl.appendChild(h("div",{className:"lboxes"},[box("Export date",d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}),"#111418","#fff",d.toLocaleDateString("en-GB",{weekday:"long"})+", "+d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})),
+    box("River level",ro?ro[1]:"Not set",ro?ro[2]:"#fff",ro?ro[3]:"#5b6573"),box("Weather",r.brief.weather||(r.brief.note?"See note":"Not set"),"#fff","#111418",r.brief.note),
+    box("Hazards",ho?ho[1]:"Not set",ho?ho[2]:"#fff",ho?ho[3]:"#5b6573",r.counts.hazard+" marked on the map"),box("Flash flood risk",fo?fo[1]:"Not set",fo?fo[2]:"#fff",fo?fo[3]:"#5b6573")]));
+  var c=r.counts;pnl.appendChild(h("div",{className:"lnote",text:"On the map at the time: "+c.race+" race kit, "+c.safety+" safety, "+c.hazard+" hazards, "+c.wps+" waypoints, "+c.ink+" drawings, "+c.photos+" photos."}));
+  var go3=h("button",{type:"button",className:"btn primary big",id:"lgo",html:ico("dl")+"<span>Download this briefing</span>",disabled:exporting||!r.snap});
+  go3.onclick=function(){doExport({snap:r.snap,at:r.at,by:r.by,brief:r.brief})};
+  pnl.appendChild(h("div",{className:"xfoot"},[h("span",{className:"xmsg",id:"lmsg",text:r.snap?"Rebuilds the PDF exactly as it was exported.":"This briefing has no saved copy to download."}),go3]));
+  if(reports.length>1){pnl.appendChild(h("h5",{text:"Earlier briefings",style:"margin:4px 0 -6px;font:600 11px var(--ui);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)"}));var hl=h("div",{className:"lhist"});
+    reports.forEach(function(x,ix){var bt=h("button",{type:"button",className:ix===lSel?"on":""},[h("span",{text:fmtWhen(x.at,true)}),h("span",{text:x.by,style:"color:var(--muted)"})]);bt.onclick=function(){lSel=ix;renderLatest()};hl.appendChild(bt)});pnl.appendChild(hl)}
+  if(!fbFs)pnl.appendChild(h("div",{className:"lnote",text:"Saved on this device for now. Once the team’s shared plan is switched on, everyone sees the latest briefing here."}))}
+$("bLatest").onclick=openLatest;$("lback").onclick=closeLatest;
 
 /* ---------- Saving: shared plan when available, this device otherwise ---------- */
 function setStatus(text,cls){var s=$("status");s.className="status "+(cls||"");s.lastChild.textContent=text}
@@ -1764,6 +1839,8 @@ function startShared(store_){db=store_;items=new Map();notes={};ink=new Map();wp
   db.collection("markx").onSnapshot(function(snap){var n={};snap.docs.forEach(function(d){var v=cleanMx(d.data());if(v)n[d.id]=v});
     if(editing()&&sel&&sel.kind==="mark"&&mo[sel.id]&&n[sel.id])n[sel.id].notes=mo[sel.id].notes;mo=n;renderPins();if(!editing())renderCard()},function(){});
   db.doc("brief/current").onSnapshot(function(d){if(d.exists){var ae=document.activeElement,nb=cleanBrief(d.data());if(ae&&ae.id==="wx-note")nb.note=brief.note;brief=nb;if(!$("xmodal").hidden)renderExport()}},function(){});
+  try{db.collection("reports").orderBy("at","desc").limit(6).onSnapshot(function(snap){var n2=[];snap.docs.forEach(function(d){var c=cleanReport(d.id,d.data());if(c)n2.push(c)});
+    if(n2.length||!reports.length)reports=n2;renderLatestBar()},function(){})}catch(_){}
   db.collection("ink").onSnapshot(function(snap){var n=new Map();snap.docs.forEach(function(d){var v=cleanInk(d.data());if(v)n.set(d.id,v)});ink=n;if(sel&&sel.kind==="ink"&&!ink.has(sel.id)){sel=null;renderCard()}renderInk()},function(){});
 }
 
@@ -1800,7 +1877,7 @@ function fitScale(){var bl=document.querySelector(".bl"),d=$("dock");if(!bl)retu
 window.addEventListener("resize",function(){setTimeout(fitScale,50)});setTimeout(fitScale,300);
 
 /* ---------- Boot ---------- */
-loadLocal();renderTabs();renderTray();updUndo();applyLayers();
+loadLocal();renderTabs();renderTray();updUndo();applyLayers();renderLatestBar();
 view=fitView();apply();renderInk();renderPins();renderCard();setStatus("Saved on this device","");
 try{if(!localStorage.getItem(TKEY))setTimeout(function(){if(tourI<0&&$("xmodal").hidden)startTour()},1400)}catch(_){}
 if(window.ResizeObserver)new ResizeObserver(function(){var old=kfit,f=fitView();if(!touched)view=f;else view.k=kfit*(view.k/old);apply()}).observe(svg);
