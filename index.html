@@ -259,15 +259,15 @@ textarea.inp{min-height:80px;resize:vertical;line-height:1.4}
 .rv-grid.haz5{grid-template-columns:repeat(2,1fr);grid-auto-rows:1fr;flex:1;min-height:0}
 .rv-grid.haz5 .rv-btn:last-child:nth-child(odd){grid-column:1/-1}
 .rv-sheet.full{top:0;max-height:none;border-radius:0;padding-top:max(18px,env(safe-area-inset-top,0px))}
-.rv-sheet.full .rv-btn{min-height:0;height:100%;font-size:clamp(18px,3vw,26px)}
-.rv-sheet.full .rv-btn svg{width:clamp(60px,14vmin,110px);height:clamp(60px,14vmin,110px)}
+.rv-sheet.full .rv-btn{min-height:0;height:100%;font-size:clamp(23px,6vmin,44px);padding:8px 6px 12px;gap:2px}
+.rv-sheet.full .rv-btn svg{flex:1 1 0;min-height:0;width:100%;height:100%;max-width:100%}
 .rv-sheet.full h3{font-size:26px}
 .rv-sheet.full .rv-cancel{height:64px;font-size:19px;flex:none}
 .rv-sheet:not(.full) .rv-btn{min-height:96px}
-#rvGrid .rv-btn{min-height:clamp(96px,15vh,140px);font-size:clamp(17px,2.4vw,21px)}
-#rvGrid .rv-btn svg{width:52px;height:52px}
+#rvGrid .rv-btn{min-height:clamp(110px,17vh,170px);font-size:clamp(21px,5vmin,30px);padding:6px 6px 10px;gap:0}
+#rvGrid .rv-btn svg{flex:1 1 0;min-height:0;width:100%;height:100%;max-width:100%}
 @media (orientation:landscape) and (min-width:700px){#rvGrid{grid-template-columns:repeat(4,1fr)}.rv-grid.haz5{grid-template-columns:repeat(3,1fr)}.rv-grid.haz5 .rv-btn:last-child:nth-child(odd){grid-column:span 2}}
-@media (max-height:500px){.rv-btn{min-height:64px;flex-direction:row;gap:8px}.rv-btn svg{width:34px;height:34px}.rv-exit,.rv-gps,.rv-rec{height:48px;min-height:48px}.rv-rec{width:48px}}
+@media (max-height:500px){#rvGrid .rv-btn{min-height:76px;flex-direction:row;gap:8px;font-size:20px}#rvGrid .rv-btn svg{flex:none;width:52px;height:52px}.rv-exit,.rv-gps,.rv-rec{height:48px;min-height:48px}.rv-rec{width:48px}}
 .rv-sheet{position:absolute;left:0;right:0;bottom:0;max-height:85%;overflow:auto;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -12px 40px -10px rgba(0,0,0,.45);
   padding:20px max(16px,env(safe-area-inset-right,0px)) max(18px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px;box-sizing:border-box}
 .rv-sheet h3{margin:0;font:700 22px var(--map)}
