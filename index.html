@@ -1272,6 +1272,63 @@ function artDragIn(){var a='<rect width="320" height="150" rx="12" fill="#f2f4f7
       '<g opacity=".9">'+tk(dr[4],.62)+'</g><g transform="translate(4,4)">'+cursorG()+'</g></g></g>'});
   return '<svg viewBox="0 0 320 150" aria-hidden="true">'+a+'</svg>'}
 var ART2={0:artWelcome,2:artRibbon,4:artZoom,5:artDragIn};
+/* ---------- Tour animations: river mode (phone-screen mock-ups) ---------- */
+var RVM_RIVER="M8 116C60 118 78 70 132 74S222 126 312 88";
+function rvMock(o){o=o||{};var a='<rect width="320" height="220" rx="12" fill="#f2f4f7"/><path d="M0 60H320M0 100H320M0 140H320M40 36V156M100 36V156M160 36V156M220 36V156M280 36V156" stroke="#e2e7ee"/>';
+  a+='<g id="'+(o.mapId||"")+'">'+(o.mapAnim||"")+'<path d="'+RVM_RIVER+'" fill="none" stroke="#2a6fdb" stroke-width="12" stroke-linecap="round"/><path d="'+RVM_RIVER+'" fill="none" stroke="#92cdf3" stroke-width="8" stroke-linecap="round"/>'+(o.onMap||"")+'</g>';
+  a+='<rect x="8" y="8" width="46" height="24" rx="7" fill="#111418"/>'+txt(31,24.5,"Exit",11,700,"#fff","middle")+
+     '<rect x="60" y="8" width="252" height="24" rx="7" fill="#fff" stroke="#d6dce5"/><circle cx="72" cy="20" r="4" fill="#1a9a4b"/>'+txt(81,24,o.gpsText||"GPS ±8 m · section 7 · km 3.51",10,600);
+  var B=[["hazard","Hazard","#ffc300"],["truck","External","#fff"],["waypoint","Waypoint","#fff"],["station","Station","#fff"]];
+  B.forEach(function(b,ix){var x=8+ix*77;a+='<g><rect x="'+x+'" y="160" width="72" height="52" rx="10" fill="'+b[2]+'" stroke="#111418" stroke-width="2">'+(o.press===ix?AN("stroke-width","2;2;5;2;2","0;"+o.pt+";"+(o.pt+.03).toFixed(2)+";"+(o.pt+.06).toFixed(2)+";1",o.dur):"")+'</rect>'+at(x+36,180,tk(b[0],.62))+txt(x+36,205,b[1],10,700,"#111418","middle")+'</g>'});
+  return a}
+function meDot(x,y){return '<g transform="translate('+x+','+y+')"><circle r="14" fill="rgba(27,79,216,.15)" stroke="rgba(27,79,216,.4)"/><circle r="6.5" fill="#fff"/><circle r="4.6" fill="#1b4fd8"/></g>'}
+function fadeIn(s0,s1,e0,e1,dur){return AN("opacity","0;0;1;1;0","0;"+s0+";"+s1+";"+e0+";"+e1,dur)}
+function svgR(a){return '<svg viewBox="0 0 320 220" aria-hidden="true">'+a+'</svg>'}
+function artRvGps(){var D="8s",a=rvMock({mapAnim:TR("translate","0 0;0 0;-46 12;-46 12;0 0;0 0","0;.5;.6;.82;.9;1",D),
+    onMap:'<g><animateMotion dur="'+D+'" repeatCount="indefinite" keyPoints="0;.45;.45;.45" keyTimes="0;.48;.95;1" calcMode="linear" path="'+RVM_RIVER+'"/><circle r="14" fill="rgba(27,79,216,.15)" stroke="rgba(27,79,216,.4)"/><circle r="6.5" fill="#fff"/><circle r="4.6" fill="#1b4fd8"/></g>'});
+  a+='<g opacity="0">'+fadeIn(".6",".62",".82",".84",D)+'<path d="M160 82v10M160 106v10M144 99h10M166 99h10" stroke="#111418" stroke-width="2.4" stroke-linecap="round"/><circle cx="160" cy="99" r="2" fill="#d7263d"/>'+
+     '<rect x="274" y="40" width="38" height="38" rx="10" fill="#1b4fd8"/><circle cx="293" cy="59" r="4" fill="#fff"/><circle cx="293" cy="59" r="9" fill="none" stroke="#fff" stroke-width="1.8"/></g>';
+  a+='<g opacity="0">'+fadeIn(".49",".5",".6",".62",D)+'<g>'+TR("translate","200 120;200 120;154 132;154 132","0;.5;.6;1",D)+icn("finger",-10,-12,1.1,"#111418")+'</g></g>';
+  a+='<g opacity="0">'+fadeIn(".82",".84",".9",".92",D)+'<g transform="translate(293,59)">'+icn("tap",-12,-12,1,"#fff")+'</g></g>';
+  return svgR(a)}
+function artRvHazard(){var D="8s",a=rvMock({press:0,pt:.06,dur:D,onMap:meDot(150,80)});
+  a+='<g opacity="0" transform="translate(150,72)">'+fadeIn(".5",".52",".95",".98",D)+'<g>'+TR("translate","0 -30;0 -30;0 0;0 0","0;.5;.55;1",D)+tk("strainer",.6)+'</g></g>';
+  a+='<g opacity="0">'+fadeIn(".12",".15",".46",".5",D)+'<rect width="320" height="220" rx="12" fill="#fff"/>'+txt(12,22,"What's the hazard?",13,700);
+  [["strainer","Strainer"],["debris","Debris"],["rocks","Sharp rocks"],["wires","Wires"],["hazard","Other hazard"]].forEach(function(h2,ix){var col=ix%2,row=Math.floor(ix/2),w=ix===4?296:146,x=12+col*150,y=32+row*60;
+    a+='<rect x="'+x+'" y="'+y+'" width="'+w+'" height="54" rx="9" fill="#ffc300" stroke="#111418" stroke-width="'+(ix===0?2:2)+'">'+(ix===0?AN("stroke-width","2;2;5;5","0;.36;.4;1",D):"")+'</rect>'+at(x+w/2,y+22,tk(h2[0],.6))+txt(x+w/2,y+48,h2[1],10,700,"#111418","middle")});
+  a+='</g><g opacity="0">'+fadeIn(".6",".63",".94",".97",D)+'<rect x="0" y="120" width="320" height="100" rx="14" fill="#fff" stroke="#d6dce5"/>'+txt(14,142,"Add a photo?",13,700)+
+     '<rect x="14" y="152" width="140" height="54" rx="10" fill="#1b4fd8" stroke="#0f2f86" stroke-width="2"/>'+icn("camera",72,160,1.1,"#fff")+txt(84,199,"Take photo",10.5,700,"#fff","middle")+
+     '<rect x="166" y="152" width="140" height="54" rx="10" fill="#fff" stroke="#111418" stroke-width="2"/>'+icn("close",224,160,1.1)+txt(236,199,"Skip",10.5,700,"#111418","middle")+'</g>';
+  return svgR(a)}
+function artRvExternal(){var D="7s",a=rvMock({press:1,pt:.06,dur:D,onMap:meDot(150,80)});
+  a+='<g opacity="0" transform="translate(166,96)">'+fadeIn(".5",".52",".95",".98",D)+'<g>'+TR("translate","0 -30;0 -30;0 0;0 0","0;.5;.55;1",D)+tk("truck",.6)+'</g></g>';
+  a+='<g opacity="0">'+fadeIn(".12",".15",".46",".5",D)+'<rect width="320" height="220" rx="12" fill="#fff"/>'+txt(12,22,"External",13,700);
+  [["ambulance","Ambulance"],["truck","Lorry"],["tube","Tube"]].forEach(function(h2,ix){var x=12+(ix===2?0:ix*150),y=ix===2?122:32,w=ix===2?296:146;
+    a+='<rect x="'+x+'" y="'+y+'" width="'+w+'" height="84" rx="10" fill="#fff" stroke="#111418" stroke-width="2">'+(ix===1?AN("stroke-width","2;2;5;5","0;.36;.4;1",D):"")+'</rect>'+at(x+w/2,y+36,tk(h2[0],.9))+txt(x+w/2,y+76,h2[1],11,700,"#111418","middle")});
+  a+='</g><g opacity="0">'+fadeIn(".55",".58",".92",".95",D)+'<rect x="70" y="40" width="180" height="28" rx="9" fill="#111418"/>'+txt(80,58,"Lorry added",10.5,600,"#fff")+'<rect x="196" y="44" width="48" height="20" rx="6" fill="#ffc300"/>'+txt(220,58,"Undo",10,700,"#111418","middle")+'</g>';
+  return svgR(a)}
+function artRvWaypoint(){var D="9s",a=rvMock({press:2,pt:.05,dur:D,onMap:meDot(150,80)});
+  a+='<g transform="translate(150,80)" opacity="0">'+fadeIn(".1",".12",".95",".98",D)+'<g>'+TR("translate","0 -40;0 -40;0 0;0 0","0;.1;.16;1",D)+'<path d="'+PIN+'" fill="#d7263d" stroke="#fff" stroke-width="2"/><circle cy="-18.5" r="4" fill="#fff"/></g>'+
+     '<g opacity="0">'+fadeIn(".86",".88",".95",".98",D)+camBadge(10,-28)+'</g></g>';
+  a+='<g opacity="0">'+fadeIn(".2",".23",".84",".87",D)+'<rect x="0" y="40" width="320" height="180" rx="14" fill="#fff" stroke="#d6dce5"/>'+txt(14,62,"Waypoint dropped",13,700)+
+     '<rect x="14" y="70" width="292" height="40" rx="8" fill="#fff" stroke="#c8d0db" stroke-width="1.4"/><clipPath id="twc"><rect x="20" y="78" width="0" height="24">'+AN("width","0;0;270;270","0;.28;.48;1",D)+'</rect></clipPath>'+
+     '<g clip-path="url(#twc)">'+txt(22,95,"Lunch stop, shallow bank on the left",11,500)+'</g>'+
+     '<rect x="14" y="116" width="292" height="30" rx="8" fill="#eef1f6" stroke="#111418" stroke-width="1.6">'+AN("stroke-width","1.6;1.6;4;1.6;1.6","0;.52;.55;.58;1",D)+'</rect>'+icn("camera",112,119,1)+txt(140,136,"Add photo",10.5,700)+
+     '<g opacity="0">'+fadeIn(".6",".62",".84",".87",D)+'<rect x="14" y="150" width="120" height="30" rx="6" fill="#4f7d4f"/><rect x="40" y="157" width="40" height="16" fill="#8a6b48"/></g>'+
+     '<rect x="14" y="184" width="292" height="30" rx="8" fill="#1b4fd8">'+AN("fill","#1b4fd8;#1b4fd8;#0f2f86;#1b4fd8;#1b4fd8","0;.76;.79;.82;1",D)+'</rect>'+txt(160,203,"Submit",11,700,"#fff","middle")+'</g>';
+  return svgR(a)}
+function artRvStation(){var D="7s",a=rvMock({press:3,pt:.08,dur:D,onMap:meDot(150,80)+'<g opacity="0" transform="translate(178,92)">'+AN("opacity","0;0;1;1;0;0","0;.14;.16;.6;.62;1",D)+'<g>'+TR("translate","0 -30;0 -30;0 0;0 0","0;.14;.2;1",D)+tk("station",.6)+'</g></g>'});
+  a+='<g opacity="0">'+fadeIn(".18",".2",".66",".7",D)+'<rect x="66" y="40" width="188" height="30" rx="9" fill="#111418"/>'+txt(76,59,"Station added",10.5,600,"#fff")+'<rect x="196" y="44" width="52" height="22" rx="6" fill="#ffc300">'+AN("fill","#ffc300;#ffc300;#fff;#ffc300;#ffc300","0;.54;.57;.6;1",D)+'</rect>'+txt(222,59,"Undo",10,700,"#111418","middle")+'</g>';
+  a+='<g opacity="0">'+fadeIn(".46",".48",".6",".62",D)+'<g>'+TR("translate","260 110;260 110;232 66;232 66","0;.46;.54;1",D)+icn("finger",-10,-12,1.1,"#111418")+'</g></g>';
+  return svgR(a)}
+function artRvReport(){var D="8s",a=rvMock({onMap:at(150,80,tk("strainer",.6))+camBadge(160,70)+at(230,98,tk("truck",.6))});
+  a+='<circle cx="150" cy="80" r="8" fill="none" stroke="#111418" stroke-width="2" opacity="0">'+AN("r","8;8;22;22","0;.12;.22;1",D)+AN("opacity","0;.9;0;0","0;.12;.22;1",D)+'</circle>';
+  a+='<g opacity="0">'+fadeIn(".24",".27",".92",".95",D)+'<rect x="0" y="36" width="320" height="184" rx="14" fill="#fff" stroke="#d6dce5"/>'+at(28,62,tk("strainer",.7))+txt(46,60,"Strainer",13,700)+txt(46,74,"Added by Ali · 3 min ago · GPS ±8 m",9.5,500,"#5b6573")+
+     '<rect x="14" y="86" width="292" height="80" rx="8" fill="#4f7d4f"/><path d="M14 150L120 100 200 140 306 96V166H14Z" fill="#3c6640"/><rect x="130" y="110" width="60" height="30" fill="#8a6b48"/>'+
+     '<rect x="14" y="174" width="292" height="38" rx="9" fill="#d7263d"/>'+icn("trash",120,181,1,"#fff")+txt(150,198,"Remove",11,700,"#fff")+'</g>';
+  return svgR(a)}
+ART2[100]=artRvGps;ART2[101]=artRvHazard;ART2[102]=artRvExternal;ART2[103]=artRvWaypoint;ART2[104]=artRvStation;ART2[105]=artRvReport;
+
 
 function tourArt(i){if(ART2[i])return ART2[i]();var a=ABG,D="5s";
   switch(i){
@@ -1484,7 +1541,14 @@ var TOUR=[
  {ic:"pinI",el:"#dock",art:10,t:"Waypoints",b:"Drop a waypoint anywhere, name it and pick a colour. Then tap it and tap or drag icons onto it, like Rest, Water or a hazard. Drag a chip out of its card to take it off.",enter:function(){setTab("point")}},
  {ic:"pen",el:"#dock",art:11,t:"Draw on the map",b:"Apple Pencil or the mouse draws while your finger still moves the map. Choose pen, marker, arrow, text note or eraser in six colours. Tap ✕ or press Esc to stop drawing.",enter:function(){setTab("draw")}},
  {ic:"undo",el:".undo",art:12,t:"Undo",b:"Reverses your last change: a placed counter, a move, a drawing, an icon. Ctrl+Z works too.",enter:function(){setTool(null);setTab("race")}},
- {ic:"pinI",el:"#bRiver",art:99,t:"River mode",b:"On the water, press River mode. The map follows your GPS and giant buttons drop a hazard, an external point (ambulance, lorry or tube), a waypoint with notes, or a station right where you are. Everything you add is stamped with your name and the time.",enter:function(){closeExport()}},
+ {ic:"pinI",el:"#bRiver",art:99,t:"River mode",b:"For reporting from the water. Press River mode, type your name once, and allow location when your phone asks. The next few panes show how it works."},
+ {ic:"pinI",art:100,wide:true,t:"River mode: the map follows you",b:"Your position is the blue dot; the circle shows GPS accuracy, and the top bar tells you the section and km. Drag the map and a crosshair appears: anything you add goes there instead. The blue button snaps back to following you."},
+ {ic:"hazard",art:101,wide:true,t:"River mode: report a hazard",b:"Press Hazard, then pick the type full-screen: strainer, debris, sharp rocks, wires or other. It drops at your position, and you can add a photo straight away or skip."},
+ {ic:"pinI",art:102,wide:true,t:"River mode: external points",b:"External opens Ambulance, Lorry and Tube. One tap drops it where you are, with a big Undo banner for a few seconds in case you hit the wrong one."},
+ {ic:"pinI",art:103,wide:true,t:"River mode: waypoints",b:"Waypoint drops a red pin where you are and opens a notes box. Type a note, add a photo if you like, and press Submit. Both are optional."},
+ {ic:"pinI",art:104,wide:true,t:"River mode: stations and undo",b:"Station is one tap. Every press shows an Undo banner for 6 seconds, so a mis-tap is easy to take back."},
+ {ic:"pinI",art:105,wide:true,t:"River mode: checking reports",b:"Tap anything on the map to see who added it, when, and its photo; tap the photo for full screen. Remove is there for mistakes. If several reports sit on one spot, you get a list to choose from."},
+ {ic:"pinI",art:null,wide:true,t:"River mode: tips for the water",b:"A few things worth knowing before you launch:",rows:[["finger","Wake the screen first","Phones stop updating your location while the screen is locked. Tap the screen before you add a report."],["river","Saving and signal","SYNCNOTE"],["close","Leaving river mode","Press Exit, top left, to go back to the planning map."]]},
  {ic:"dl",el:"#bExport",art:13,t:"Export a briefing",b:"Makes a PDF for the briefing: the whole river first, then one page per section with everything placed and all team notes.",enter:function(){closeExport()}},
  {ic:"dl",el:"#xpanel",art:14,t:"Set today's conditions",b:"Pick the river level, weather, number of hazards and flash flood risk. They print as big coloured boxes on page one. Then press Download PDF.",enter:function(){openExport()}},
  {ic:"play",art:15,t:"You're ready",b:"Replay this tour any time from the ? button. On the shared Claude link your changes reach the whole team; on the website they stay on your device.",enter:function(){closeExport();go(fitView())}}
@@ -1497,6 +1561,8 @@ function endTour(){clearInterval(tourTimer);$("tourArrow").hidden=true;$("tour")
 function tourGo(i){if(i<0)return;if(i>=TOUR.length){endTour();return}tourI=i;var st=TOUR[i];if(st.enter)st.enter();
   clearInterval(tourTimer);$("tourArrow").hidden=true;var c=$("tourCard");c.textContent="";c.classList.toggle("wide",!!st.wide);var art=h("div",{className:"art",html:st.art!=null?tourArt(st.art):""});if(st.art!=null)c.appendChild(art);
   try{var asv=art.querySelector("svg");if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches&&asv.pauseAnimations){asv.setCurrentTime(2.6);asv.pauseAnimations()}}catch(_){}c.appendChild(h("h3",{id:"tourT",text:st.t}));c.appendChild(h("p",{text:st.b}));
+  if(st.rows){var ul2=h("div",{className:"tlist"});st.rows.forEach(function(r){var txt2=r[2]==="SYNCNOTE"?(fbFs?"Reports reach everyone within a second or two, and wait on the phone through stretches with no signal.":"Right now reports are saved on this phone. Once the team’s shared plan is switched on, they’ll reach everyone automatically."):r[2];
+      ul2.appendChild(h("div",{className:"trow",html:ico(r[0])},[h("div",{},[h("b",{text:r[1]}),h("span",{text:txt2})])]))});c.appendChild(ul2)}
   if(st.list){var ul=h("div",{className:"tlist"});st.list.forEach(function(r){ul.appendChild(h("div",{className:"trow",html:ico(r[0])},[h("div",{},[h("b",{text:r[1]}),h("span",{text:r[2]})])]))});c.appendChild(ul);
     var k=0;setTimeout(function(){if(TOUR[tourI]===st)tourPoint(st,0)},420);tourTimer=setInterval(function(){k=(k+1)%st.list.length;tourPoint(st,k)},1900)}
   var dots=h("div",{className:"tdots","aria-label":"Step "+(i+1)+" of "+TOUR.length});TOUR.forEach(function(_,j){dots.appendChild(h("i",{className:j===i?"on":""}))});
