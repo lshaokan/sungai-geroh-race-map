@@ -331,10 +331,21 @@ html,body{overscroll-behavior:none}
 .lrow input[type=range]{flex:1;accent-color:#111418}
 .satnote{font-size:11.5px;color:#b3261e;line-height:1.35;padding:0 6px 6px 40px}
 #tour{position:fixed;inset:0;z-index:60}
-#tourSpot{position:fixed;border-radius:14px;box-shadow:0 0 0 9999px rgba(17,20,24,.58);transition:all .28s ease;pointer-events:none;outline:3px solid #ffc300;outline-offset:0}
+#tourSpot{position:fixed;border-radius:14px;box-shadow:0 0 0 9999px rgba(17,20,24,.16);transition:all .28s ease;pointer-events:none;outline:3px solid #ffc300;outline-offset:0}
 #tourSpot.none{left:50%!important;top:45%!important;width:0!important;height:0!important;outline:0}
 #tourCard{position:fixed;width:min(360px,calc(100vw - 32px));background:#fff;border-radius:16px;padding:18px;box-sizing:border-box;box-shadow:0 18px 40px -12px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:10px;transition:top .28s ease,left .28s ease}
 #tourCard .art svg{display:block;width:100%;height:auto;border-radius:12px;box-shadow:inset 0 0 0 1px #e2e7ee}
+#tourCard.wide{width:min(480px,calc(100vw - 32px))}
+.tlist{display:flex;flex-direction:column;gap:8px}
+.trow{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;background:#f1f3f7;border:2px solid transparent;transition:background .25s,border-color .25s}
+.trow svg{width:26px;height:26px;flex:none}
+.trow b{display:block;font:700 15px var(--map)}.trow span{display:block;font-size:13px;color:var(--muted);line-height:1.35}
+.trow.on{background:#fff6d6;border-color:#ffc300}
+#tourArrow{position:fixed;z-index:62;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none;transition:left .35s ease,top .35s ease}
+#tourArrow svg{animation:tbob 0.9s ease-in-out infinite}
+#tourArrow span{background:#111418;color:#fff;font:700 13px var(--map);padding:4px 10px;border-radius:8px;white-space:nowrap}
+@keyframes tbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){#tourArrow svg{animation:none}}
 #tourCard .tic{width:44px;height:44px;border-radius:12px;background:#111418;color:#ffc300;display:grid;place-items:center}
 #tourCard .tic svg{width:26px;height:26px}
 #tourCard h3{margin:0;font:700 19px var(--map);line-height:1.2}
@@ -431,7 +442,7 @@ html,body{overscroll-behavior:none}
   <div id="hint" class="plate fade" role="status"></div>
   <div id="river" hidden></div>
   <div id="jmodal" hidden><div class="xback" onclick="this.parentNode.hidden=true"></div><div class="xpanel plate" id="jpanel" role="dialog" aria-modal="true"></div></div>
-  <div id="tour" hidden><div id="tourSpot"></div><div id="tourCard" role="dialog" aria-modal="true" aria-labelledby="tourT"></div></div>
+  <div id="tour" hidden><div id="tourSpot"></div><div id="tourArrow" hidden><svg viewBox="0 0 28 38" width="28" height="38" aria-hidden="true"><path d="M14 2L26 16H18V36H10V16H2Z" fill="#ffc300" stroke="#111418" stroke-width="2" stroke-linejoin="round"/></svg><span></span></div><div id="tourCard" role="dialog" aria-modal="true" aria-labelledby="tourT"></div></div>
   <div id="xmodal" hidden><div class="xback" id="xback"></div><div class="xpanel plate" role="dialog" aria-modal="true" aria-labelledby="xtitle" id="xpanel"></div></div>
 </div>
 <div id="ghost" hidden></div>
@@ -1198,7 +1209,71 @@ function txt(x,y,t,size,wt,fill,anchor){return '<text x="'+x+'" y="'+y+'" font-f
 var ABG='<rect width="320" height="120" rx="12" fill="#f2f4f7"/><path d="M0 30H320M0 60H320M0 90H320M40 0V120M80 0V120M120 0V120M160 0V120M200 0V120M240 0V120M280 0V120" stroke="#e2e7ee"/>';
 function STAR(){return '<circle r="7.5" fill="#fff" stroke="#111418" stroke-width="1.1"/><path d="M0-5l1.4 3 3.3.4-2.5 2.2.7 3.3L0 2.3l-2.9 1.6.7-3.3-2.5-2.2 3.3-.4z" fill="#ffc300" stroke="#111418" stroke-width=".7"/>'}
 var PIN='M0 0C-3-6-11.5-11-11.5-18.5A11.5 11.5 0 1 1 11.5-18.5C11.5-11 3-6 0 0Z';
-function tourArt(i){var a=ABG,D="5s";
+/* ---------- Tour animations v2 (real river geometry) ---------- */
+function fitT(pts,x0,y0,w,h){var a=1e9,b=1e9,c=-1e9,d=-1e9;pts.forEach(function(p){a=Math.min(a,p[0]);b=Math.min(b,p[1]);c=Math.max(c,p[0]);d=Math.max(d,p[1])});
+  var s=Math.min(w/(c-a||1),h/(d-b||1));return{s:s,tx:x0+(w-(c-a)*s)/2-a*s,ty:y0+(h-(d-b)*s)/2-b*s}}
+function scr(T,x,y){return[T.tx+T.s*x,T.ty+T.s*y]}
+function disc(vals,kt,dur){return '<animate attributeName="opacity" values="'+vals+'" keyTimes="'+kt+'" dur="'+dur+'" calcMode="discrete" repeatCount="indefinite"/>'}
+function findMark(layer,name){for(var i=0;i<LAYERS.length;i++)if(LAYERS[i].id===layer)for(var j=0;j<LAYERS[i].pts.length;j++)if(LAYERS[i].pts[j].n===name)return LAYERS[i].pts[j];return null}
+var FULLD=null;function fullD(){return FULLD||(FULLD=pathFor(0,P.length-1))}
+function artWelcome(){var a=ABG,D="6s";
+  a+='<path d="'+RV+'" fill="none" stroke="#2a6fdb" stroke-width="13" stroke-linecap="round" stroke-dasharray="420" stroke-dashoffset="420">'+AN("stroke-dashoffset","420;0;0;420","0;.3;.95;1",D)+'</path>'+
+     '<path d="'+RV+'" fill="none" stroke="#92cdf3" stroke-width="9" stroke-linecap="round" stroke-dasharray="420" stroke-dashoffset="420">'+AN("stroke-dashoffset","420;0;0;420","0;.3;.95;1",D)+'</path>'+at(22,104,tk("start",.55))+at(300,36,tk("finish",.55));
+  [["tube",69,64,-40,64],["strainer",150,45,150,-40],["ambulance",238,88,238,170],["rocks",270,66,370,66],["station",104,34,60,-40]].forEach(function(t2,ix){var s0=(.34+ix*.1).toFixed(2),s1=(+s0+.1).toFixed(2),s2=(+s0+.13).toFixed(2);
+    a+='<g><g opacity="0">'+TR("translate",t2[3]+" "+t2[4]+";"+t2[3]+" "+t2[4]+";"+t2[1]+" "+(t2[2]+3)+";"+t2[1]+" "+t2[2]+";"+t2[1]+" "+t2[2],"0;"+s0+";"+s1+";"+s2+";1",D)+AN("opacity","0;0;1;1;0","0;"+s0+";"+(+s0+.02).toFixed(2)+";.94;.97",D)+tk(t2[0],.6)+'</g></g>'});
+  return '<svg viewBox="0 0 320 120" aria-hidden="true">'+a+'</svg>'}
+function artRibbon(){var a='<rect width="320" height="200" rx="12" fill="#f2f4f7"/>',D="9s",N=SECS.length,x=14,W=292,tot=TOTAL,xs=[],ws=[];
+  SECS.forEach(function(s,ix){var w=(CUM[s.b]-CUM[s.a])/tot*(W-2*(N-1));xs.push(x);ws.push(w);a+='<rect x="'+x.toFixed(1)+'" y="14" width="'+w.toFixed(1)+'" height="24" rx="4" fill="'+(ix%2?"#c5dcf6":"#d9e9fb")+'"/>'+txt((x+w/2).toFixed(1),30.5,s.n,10.5,700,"#0f3a8a","middle");x+=w+2});
+  SECS.forEach(function(s,ix){var k0=(ix/N).toFixed(4),k1=((ix+1)/N).toFixed(4),v=ix===0?"1;0":ix===N-1?"0;1":"0;1;0",kt=ix===0?"0;"+k1:ix===N-1?"0;"+k0:"0;"+k0+";"+k1;
+    a+='<rect x="'+(xs[ix]-1.5).toFixed(1)+'" y="12.5" width="'+(ws[ix]+3).toFixed(1)+'" height="27" rx="5" fill="none" stroke="#1b4fd8" stroke-width="3" opacity="'+(ix?0:1)+'">'+disc(v,kt,D)+'</rect>'});
+  a+='<rect x="10" y="50" width="300" height="142" rx="10" fill="#fff" stroke="#d6dce5"/>';
+  var T=fitT(P,26,74,268,112),d=fullD();
+  a+='<g transform="translate('+T.tx.toFixed(2)+','+T.ty.toFixed(2)+') scale('+T.s.toFixed(5)+')">';
+  SECS.forEach(function(s,ix){var k0=(ix/N).toFixed(4),k1=((ix+1)/N).toFixed(4),v=ix===0?"1;0":ix===N-1?"0;1":"0;1;0",kt=ix===0?"0;"+k1:ix===N-1?"0;"+k0:"0;"+k0+";"+k1;
+    a+='<path d="'+pathFor(s.a,s.b)+'" fill="none" stroke="#ffc300" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" opacity="'+(ix?0:1)+'">'+disc(v,kt,D)+'</path>'});
+  a+='<path d="'+d+'" fill="none" stroke="#2a6fdb" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/><path d="'+d+'" fill="none" stroke="#92cdf3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></g>';
+  SECS.forEach(function(s,ix){var k0=(ix/N).toFixed(4),k1=((ix+1)/N).toFixed(4),v=ix===0?"1;0":ix===N-1?"0;1":"0;1;0",kt=ix===0?"0;"+k1:ix===N-1?"0;"+k0:"0;"+k0+";"+k1,p=scr(T,P[s.mid][0],P[s.mid][1]);
+    a+='<g opacity="'+(ix?0:1)+'">'+disc(v,kt,D)+txt(22,68,"Section "+s.n+" · "+s.name,11.5,700)+'<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="7" fill="#ffc300" stroke="#111418" stroke-width="1.4"/>'+txt(p[0].toFixed(1),(p[1]+3.4).toFixed(1),s.n,8.5,700,"#111418","middle")+'</g>'});
+  return '<svg viewBox="0 0 320 200" aria-hidden="true">'+a+'</svg>'}
+function artZoom(){var a='<rect width="320" height="170" rx="12" fill="#f2f4f7"/>',D="9s",s1=SECS[0];
+  var r3=findMark("rapids","Rapid 3"),r22=findMark("rapids","Rapid 2.2"),r1=findMark("rapids","Rapid 1"),rp=findMark("rapids","Rapid 3 Reset Point"),e1=findMark("extract","Extraction 1"),rg=findMark("camps","Rock Garden Camping Resort");
+  var T0=fitT(P,12,14,296,146),pts=P.slice(s1.a,s1.b+1).concat([[rg.x,rg.y]]),T1=fitT(pts,40,14,170,146);
+  a+='<clipPath id="tzz"><rect width="320" height="170" rx="12"/></clipPath><g clip-path="url(#tzz)">';
+  var tv=[T0.tx+" "+T0.ty,T0.tx+" "+T0.ty,T1.tx+" "+T1.ty,T1.tx+" "+T1.ty,T0.tx+" "+T0.ty].join(";"),sv=[T0.s,T0.s,T1.s,T1.s,T0.s].join(";"),kt="0;.12;.34;.88;1",d=fullD();
+  a+='<g transform="translate('+T0.tx+','+T0.ty+')">'+TR("translate",tv,kt,D)+'<g transform="scale('+T0.s+')">'+TR("scale",sv,kt,D)+
+    '<path d="'+pathFor(s1.a,s1.b)+'" fill="none" stroke="#ffc300" stroke-width="12" stroke-linecap="round" vector-effect="non-scaling-stroke" opacity="0">'+AN("opacity","0;0;.8;.8;0","0;.14;.2;.86;.9",D)+'</path>'+
+    '<path d="'+d+'" fill="none" stroke="#2a6fdb" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/><path d="'+d+'" fill="none" stroke="#92cdf3" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></g></g>';
+  function lab(m,glyph,text,dx,dy,anchor,delay,big){var p=scr(T1,m.x,m.y),s0=(.38+delay).toFixed(2);
+    return '<g opacity="0">'+AN("opacity","0;0;1;1;0","0;"+s0+";"+(+s0+.04).toFixed(2)+";.86;.88",D)+'<g transform="translate('+p[0].toFixed(1)+','+p[1].toFixed(1)+')">'+glyph+'</g>'+
+      '<text x="'+(p[0]+dx).toFixed(1)+'" y="'+(p[1]+dy).toFixed(1)+'" text-anchor="'+anchor+'" font-family="Barlow Semi Condensed,Arial,sans-serif" font-size="'+(big?10.5:9.5)+'" font-weight="'+(big?700:600)+'" fill="#111418" paint-order="stroke" stroke="#fff" stroke-width="3" stroke-linejoin="round">'+text+'</text></g>'}
+  var star='<g transform="scale(.75)">'+STAR()+'</g>',dot='<circle r="3.6" fill="#fff" stroke="#5b6573" stroke-width="1.6"/>',dia='<rect x="-4.5" y="-4.5" width="9" height="9" rx="1.3" transform="rotate(45)" fill="#d7263d" stroke="#fff" stroke-width="1.4"/>',
+      camp='<rect x="-7" y="-7" width="14" height="14" rx="4" fill="#fff" stroke="#1a9a4b" stroke-width="1.6"/><path d="M-4 3.5L0-3.5l4 7z" fill="none" stroke="#1a9a4b" stroke-width="1.4" stroke-linejoin="round"/>';
+  a+=lab(r1,star,"Rapid 1",9,3.5,"start",0)+lab(r22,star,"Rapid 2.2",-9,3.5,"end",.03)+lab(r3,star,"Rapid 3",9,3.5,"start",.06,true)+lab(rp,dot,"Rapid 3 Reset Point",7,-5,"start",.12)+lab(e1,dia,"E1 Rock Garden",-8,3.5,"end",.15)+lab(rg,camp,"Rock Garden",10,3.5,"start",.18);
+  var pr3=scr(T1,r3.x,r3.y);
+  a+='<g opacity="0">'+AN("opacity","0;0;1;1;0","0;.6;.64;.86;.88",D)+at(pr3[0]+46,pr3[1]+12,tk("marshal",.42))+at(pr3[0]+60,pr3[1]+12,tk("rope",.42))+'</g>';
+  var p0=scr(T1,P[s1.a][0],P[s1.a][1]);a+='<g opacity="0">'+AN("opacity","0;0;1;1;0","0;.66;.7;.86;.88",D)+at(p0[0]-2,p0[1]-12,tk("start",.42))+at(scr(T1,r22.x,r22.y)[0]+14,scr(T1,r22.x,r22.y)[1]-10,tk("tube",.4))+'</g>';
+  a+='</g><rect x="226" y="10" width="86" height="26" rx="8" fill="#111418"/>'+
+    '<g>'+disc("1;0;0;1","0;.13;.36;.9",D)+txt(269,27.5,"River",12,700,"#fff","middle")+'</g>'+
+    '<g opacity="0">'+disc("0;1;0;0","0;.13;.36;.9",D)+txt(269,27.5,"Section 1",12,700,"#fff","middle")+'</g>'+
+    '<g opacity="0">'+disc("0;0;1;0","0;.13;.36;.9",D)+txt(269,27.5,"Detail",12,700,"#fff","middle")+'</g>';
+  return '<svg viewBox="0 0 320 170" aria-hidden="true">'+a+'</svg>'}
+function cursorG(){return '<path d="M0 0V17L4.6 12.6 7.6 19.6 10.6 18.3 7.7 11.5H14Z" fill="#fff" stroke="#111418" stroke-width="1.6" stroke-linejoin="round"/>'}
+function artDragIn(){var a='<rect width="320" height="150" rx="12" fill="#f2f4f7"/>',D="8s";
+  a+='<path d="M0 104C40 104 60 60 96 62S130 100 150 96" fill="none" stroke="#2a6fdb" stroke-width="13" stroke-linecap="round"/><path d="M0 104C40 104 60 60 96 62S130 100 150 96" fill="none" stroke="#92cdf3" stroke-width="9" stroke-linecap="round"/>'+
+    at(96,62,STAR())+txt(96,46,"Rapid 3",10.5,700,"#111418","middle")+
+    '<circle cx="96" cy="62" r="6" fill="none" stroke="#111418" stroke-width="2" opacity="0">'+AN("r","6;6;20;20","0;.03;.12;1",D)+AN("opacity","0;.9;0;0","0;.03;.12;1",D)+'</circle>';
+  a+='<g opacity="0">'+AN("opacity","0;0;1;1;0","0;.08;.12;.95;1",D)+'<rect x="164" y="10" width="146" height="130" rx="10" fill="#fff" stroke="#d6dce5"/>'+at(178,26,'<g transform="scale(.7)">'+STAR()+'</g>')+txt(190,30,"Rapid 3",11.5,700)+
+    txt(174,50,"AT THIS POINT",7.5,700,"#5b6573")+'<rect x="172" y="56" width="130" height="42" rx="8" fill="none" stroke="#d6dce5" stroke-width="1.6" stroke-dasharray="4 3">'+AN("stroke","#d6dce5;#d6dce5;#ffc300;#d6dce5;#d6dce5;#ffc300;#d6dce5","0;.28;.36;.42;.6;.68;.74",D)+'</rect>'+
+    '<rect x="172" y="106" width="130" height="24" rx="6" fill="#f1f3f7"/>'+txt(178,121,"1 lifeguard with rope",8,500,"#5b6573")+
+    '<g opacity="0">'+AN("opacity","0;0;1;1","0;.4;.41;1",D)+'<rect x="178" y="66" width="56" height="22" rx="11" fill="#f1f3f7"/>'+at(189,77,tk("marshal",.5))+txt(200,80.5,"Lifeguard",8,600)+'</g>'+
+    '<g opacity="0">'+AN("opacity","0;0;1;1","0;.72;.73;1",D)+'<rect x="238" y="66" width="56" height="22" rx="11" fill="#f1f3f7"/>'+at(249,77,tk("rope",.5))+txt(260,80.5,"Rope",8,600)+'</g></g>';
+  [[".16",".38",".40","189 77","marshal"],[".48",".70",".72","249 77","rope"]].forEach(function(dr){var st=dr[0],en=dr[1],off=dr[2];
+    a+='<g opacity="0">'+AN("opacity","0;0;1;1;0;0","0;"+st+";"+(+st+.01).toFixed(2)+";"+en+";"+off+";1",D)+'<g>'+TR("translate","350 170;350 170;"+dr[3]+";"+dr[3],"0;"+st+";"+en+";1",D)+
+      '<g opacity=".9">'+tk(dr[4],.62)+'</g><g transform="translate(4,4)">'+cursorG()+'</g></g></g>'});
+  return '<svg viewBox="0 0 320 150" aria-hidden="true">'+a+'</svg>'}
+var ART2={0:artWelcome,2:artRibbon,4:artZoom,5:artDragIn};
+
+function tourArt(i){if(ART2[i])return ART2[i]();var a=ABG,D="5s";
   switch(i){
   case 0:a+='<path d="'+RV+'" fill="none" stroke="#2a6fdb" stroke-width="13" stroke-linecap="round" stroke-dasharray="420" stroke-dashoffset="420">'+AN("stroke-dashoffset","420;0;0","0;.4;1",D)+'</path>'+
       '<path d="'+RV+'" fill="none" stroke="#92cdf3" stroke-width="9" stroke-linecap="round" stroke-dasharray="420" stroke-dashoffset="420">'+AN("stroke-dashoffset","420;0;0","0;.4;1",D)+'</path>'+
@@ -1397,29 +1472,33 @@ function rvItemSheet(kind,id){var o=kind==="item"?items.get(id):wps.get(id);if(!
 var TKEY="geroh-tour-done-v1",tourI=-1;
 function r3mark(){var L=LAYERS.filter(function(x){return x.id==="rapids"})[0];for(var i=0;i<L.pts.length;i++)if(L.pts[i].n==="Rapid 3")return "rapids:"+i;return null}
 var TOUR=[
- {ic:"spark",t:"Welcome to the Sungai Geroh race map",b:"This is your planning board for the river: nine sections from Rapid 0 to Hussein Bridge. This tour takes about two minutes and shows every part, ending with the PDF export. Use Next, or the arrow keys."},
- {ic:"help",el:".tl",t:"Status and tools",b:"The dot shows whether your changes are saved. “Live” means everyone with the map sees them. Layers, help and Export sit here too.",enter:function(){go(fitView())}},
- {ic:"river",el:".tc",t:"The river at a glance",b:"Each block is one section, sized to its real length. Tap a number to jump there. Tents mark Murni and Nomad camps, and small pips show the start, finish, hazards and safety along the run."},
- {ic:"section",el:"#card",t:"Section details",b:"Tapping a section, on the bar or on the river, opens its card: length, rapids, exits, everything placed there and notes for the team. The section glows yellow on the map.",enter:function(){var s=SECS[0];select({kind:"sec",id:s.id});zoomToSec(s)}},
- {ic:"detail",el:".vstack",t:"Three zoom levels",b:"River shows the whole run. Section shows rapids and exits. Detail shows every landmark. You can also pinch or scroll to zoom, and drag the map to move it.",enter:function(){select(null)}},
- {ic:"star",el:"#card",t:"Markers from your Google map",b:"Tap any marker to read its note, like this one at Rapid 3. You can give it a colour, attach icons such as a lifeguard or a hazard, and add your own notes.",enter:function(){var id=r3mark();if(id){select({kind:"mark",id:id});var m=markById(id);go(centreOn(m.x,m.y,Math.max(view.k,kfit*3.2)))}}},
- {ic:"layers",el:"#pLayers",t:"Layers",b:"Switch groups of markers on or off. “Satellite photo” puts real imagery under the river (website version). “Hide old 2014–2016 markers” keeps the old stations out of the way. The target button flies the map to a layer.",enter:function(){select(null);closePops();$("pLayers").hidden=false;$("bLayers").setAttribute("aria-expanded","true");renderLayers()}},
- {ic:"race",el:"#dock",t:"Race kit",b:"Drag a counter from the dock onto the river. It settles on the nearest bank: river-left, mid-river or river-right. Counters that overlap stack into a numbered disc; tap it to split them.",enter:function(){closePops();setTab("race")}},
- {ic:"safety",el:"#dock",t:"Safety",b:"Ambulances, first aid posts, lifeguards and throw ropes. Tap any counter on the map to label it, move it to the other bank, duplicate it or remove it.",enter:function(){setTab("safety")}},
- {ic:"hazard",el:"#dock",t:"Hazards",b:"Strainers, debris, sharp rocks and wires are yellow diamonds, so they stand out from everything else on the board.",enter:function(){setTab("hazard")}},
- {ic:"pinI",el:"#dock",t:"Waypoints",b:"Drop a waypoint anywhere, name it and pick a colour. Then tap it and tap or drag icons onto it, like Rest, Water or a hazard. Drag a chip out of its card to take it off.",enter:function(){setTab("point")}},
- {ic:"pen",el:"#dock",t:"Draw on the map",b:"Apple Pencil or the mouse draws while your finger still moves the map. Choose pen, marker, arrow, text note or eraser in six colours. Tap ✕ or press Esc to stop drawing.",enter:function(){setTab("draw")}},
- {ic:"undo",el:".undo",t:"Undo",b:"Reverses your last change: a placed counter, a move, a drawing, an icon. Ctrl+Z works too.",enter:function(){setTool(null);setTab("race")}},
- {ic:"pinI",el:"#bRiver",t:"River mode",b:"On the water, press River mode. The map follows your GPS and giant buttons drop a hazard, an external point (ambulance, lorry or tube), a waypoint with notes, or a station right where you are. Everything you add is stamped with your name and the time.",enter:function(){closeExport()}},
- {ic:"dl",el:"#bExport",t:"Export a briefing",b:"Makes a PDF for the briefing: the whole river first, then one page per section with everything placed and all team notes.",enter:function(){closeExport()}},
- {ic:"dl",el:"#xpanel",t:"Set today's conditions",b:"Pick the river level, weather, number of hazards and flash flood risk. They print as big coloured boxes on page one. Then press Download PDF.",enter:function(){openExport()}},
- {ic:"play",t:"You're ready",b:"Replay this tour any time from the ? button. On the shared Claude link your changes reach the whole team; on the website they stay on your device.",enter:function(){closeExport();go(fitView())}}
+ {ic:"spark",art:0,t:"Welcome to the Sungai Geroh race map",b:"This is your planning board for the river: nine sections from Rapid 0 to Hussein Bridge. This tour takes about two minutes and shows every part, ending with the PDF export. Use Next, or the arrow keys."},
+ {ic:"help",el:".tl",art:null,t:"Status and tools",wide:true,gap:58,b:"The dot under the title shows whether your changes are saved. Next to it are three tools:",list:[["layers","Layers","Switch groups of markers, the satellite photo and the old 2014 markers on or off.","#bLayers"],["help","Tutorial","Replay this tour any time, plus quick tips.","#bHelp"],["dl","Export","Make the PDF briefing with today’s conditions.","#bExport"]],enter:function(){go(fitView())}},
+ {ic:"river",el:".tc",art:2,t:"The river at a glance",b:"Each block is one section, sized to its real length. Tap a number to jump there. Tents mark Murni and Nomad camps, and small pips show the start, finish, hazards and safety along the run."},
+ {ic:"detail",el:".vstack",art:4,t:"Three zoom levels",b:"River shows the whole run. Section shows rapids and exits. Detail shows every landmark. You can also pinch or scroll to zoom, and drag the map to move it.",enter:function(){select(null)}},
+ {ic:"star",el:"#card",art:5,t:"Markers from your Google map",b:"Tap any marker to read its note, like this one at Rapid 3. You can give it a colour, attach icons such as a lifeguard or a hazard, and add your own notes.",enter:function(){var id=r3mark();if(id){select({kind:"mark",id:id});var m=markById(id);go(centreOn(m.x,m.y,Math.max(view.k,kfit*3.2)))}}},
+ {ic:"layers",el:"#pLayers",art:6,t:"Layers",b:"Switch groups of markers on or off. “Satellite photo” puts real imagery under the river (website version). “Hide old 2014–2016 markers” keeps the old stations out of the way. The target button flies the map to a layer.",enter:function(){select(null);closePops();$("pLayers").hidden=false;$("bLayers").setAttribute("aria-expanded","true");renderLayers()}},
+ {ic:"race",el:"#dock",art:7,t:"Race kit",b:"Drag a counter from the dock onto the river. It settles on the nearest bank: river-left, mid-river or river-right. Counters that overlap stack into a numbered disc; tap it to split them.",enter:function(){closePops();setTab("race")}},
+ {ic:"safety",el:"#dock",art:8,t:"Safety",b:"Ambulances, first aid posts, lifeguards and throw ropes. Tap any counter on the map to label it, move it to the other bank, duplicate it or remove it.",enter:function(){setTab("safety")}},
+ {ic:"hazard",el:"#dock",art:9,t:"Hazards",b:"Strainers, debris, sharp rocks and wires are yellow diamonds, so they stand out from everything else on the board.",enter:function(){setTab("hazard")}},
+ {ic:"pinI",el:"#dock",art:10,t:"Waypoints",b:"Drop a waypoint anywhere, name it and pick a colour. Then tap it and tap or drag icons onto it, like Rest, Water or a hazard. Drag a chip out of its card to take it off.",enter:function(){setTab("point")}},
+ {ic:"pen",el:"#dock",art:11,t:"Draw on the map",b:"Apple Pencil or the mouse draws while your finger still moves the map. Choose pen, marker, arrow, text note or eraser in six colours. Tap ✕ or press Esc to stop drawing.",enter:function(){setTab("draw")}},
+ {ic:"undo",el:".undo",art:12,t:"Undo",b:"Reverses your last change: a placed counter, a move, a drawing, an icon. Ctrl+Z works too.",enter:function(){setTool(null);setTab("race")}},
+ {ic:"pinI",el:"#bRiver",art:99,t:"River mode",b:"On the water, press River mode. The map follows your GPS and giant buttons drop a hazard, an external point (ambulance, lorry or tube), a waypoint with notes, or a station right where you are. Everything you add is stamped with your name and the time.",enter:function(){closeExport()}},
+ {ic:"dl",el:"#bExport",art:13,t:"Export a briefing",b:"Makes a PDF for the briefing: the whole river first, then one page per section with everything placed and all team notes.",enter:function(){closeExport()}},
+ {ic:"dl",el:"#xpanel",art:14,t:"Set today's conditions",b:"Pick the river level, weather, number of hazards and flash flood risk. They print as big coloured boxes on page one. Then press Download PDF.",enter:function(){openExport()}},
+ {ic:"play",art:15,t:"You're ready",b:"Replay this tour any time from the ? button. On the shared Claude link your changes reach the whole team; on the website they stay on your device.",enter:function(){closeExport();go(fitView())}}
 ];
+var tourTimer=0;
+function tourPoint(st,k){var rows=document.querySelectorAll("#tourCard .trow");rows.forEach(function(r,j){r.classList.toggle("on",j===k)});var t=document.querySelector(st.list[k][3]),ar=$("tourArrow");if(!t)return;
+  var q=t.getBoundingClientRect();ar.querySelector("span").textContent=st.list[k][1];ar.hidden=false;ar.style.left=Math.round(q.left+q.width/2)+"px";ar.style.top=Math.round(q.bottom+4)+"px"}
 function startTour(){closeExport();closePops();setArmed(null);setTool(null);tourI=-1;$("tour").hidden=false;tourGo(0)}
-function endTour(){$("tour").hidden=true;tourI=-1;try{localStorage.setItem(TKEY,"1")}catch(_){}closePops();closeExport();select(null);setTab("race");go(fitView())}
+function endTour(){clearInterval(tourTimer);$("tourArrow").hidden=true;$("tour").hidden=true;tourI=-1;try{localStorage.setItem(TKEY,"1")}catch(_){}closePops();closeExport();select(null);setTab("race");go(fitView())}
 function tourGo(i){if(i<0)return;if(i>=TOUR.length){endTour();return}tourI=i;var st=TOUR[i];if(st.enter)st.enter();
-  var c=$("tourCard");c.textContent="";var art=h("div",{className:"art",html:tourArt(st.ic==="pinI"&&st.el==="#bRiver"?99:(i>13?i-1:i))});c.appendChild(art);
+  clearInterval(tourTimer);$("tourArrow").hidden=true;var c=$("tourCard");c.textContent="";c.classList.toggle("wide",!!st.wide);var art=h("div",{className:"art",html:st.art!=null?tourArt(st.art):""});if(st.art!=null)c.appendChild(art);
   try{var asv=art.querySelector("svg");if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches&&asv.pauseAnimations){asv.setCurrentTime(2.6);asv.pauseAnimations()}}catch(_){}c.appendChild(h("h3",{id:"tourT",text:st.t}));c.appendChild(h("p",{text:st.b}));
+  if(st.list){var ul=h("div",{className:"tlist"});st.list.forEach(function(r){ul.appendChild(h("div",{className:"trow",html:ico(r[0])},[h("div",{},[h("b",{text:r[1]}),h("span",{text:r[2]})])]))});c.appendChild(ul);
+    var k=0;setTimeout(function(){if(TOUR[tourI]===st)tourPoint(st,0)},420);tourTimer=setInterval(function(){k=(k+1)%st.list.length;tourPoint(st,k)},1900)}
   var dots=h("div",{className:"tdots","aria-label":"Step "+(i+1)+" of "+TOUR.length});TOUR.forEach(function(_,j){dots.appendChild(h("i",{className:j===i?"on":""}))});
   var nav=h("div",{className:"tnav"},[dots]);if(i>0){var bk=h("button",{type:"button",className:"btn",text:"Back"});bk.onclick=function(){tourGo(i-1)};nav.appendChild(bk)}
   else{var sk=h("button",{type:"button",className:"tskip",text:"Skip tour"});sk.onclick=endTour;nav.appendChild(sk)}
@@ -1430,6 +1509,7 @@ function placeTour(){if(tourI<0)return;var st=TOUR[tourI],sp=$("tourSpot"),c=$("
   if(!r){sp.className="none";c.style.left=Math.round((vw-cw)/2)+"px";c.style.top=Math.round((vh-ch)/2)+"px";return}
   sp.className="";sp.style.left=(r.left-pad)+"px";sp.style.top=(r.top-pad)+"px";sp.style.width=(r.width+pad*2)+"px";sp.style.height=(r.height+pad*2)+"px";
   var g=14,x,y;
+  if(st.gap)g+=st.gap;
   if(vh-r.bottom-g>=ch+8){y=r.bottom+g;x=r.left+r.width/2-cw/2}
   else if(r.top-g>=ch+8){y=r.top-g-ch;x=r.left+r.width/2-cw/2}
   else if(vw-r.right-g>=cw+8){x=r.right+g;y=r.top+r.height/2-ch/2}
