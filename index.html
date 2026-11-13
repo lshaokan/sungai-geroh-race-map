@@ -276,6 +276,17 @@ textarea.inp{min-height:80px;resize:vertical;line-height:1.4}
 .rv-go{height:60px;border-radius:16px;background:#1b4fd8;color:#fff;font:700 18px var(--map)}
 .rv-name{font-size:20px!important;padding:14px 16px!important}
 .rv-notes{font-size:18px!important;min-height:140px;padding:14px 16px!important}
+.ph-thumb{display:block;width:100%;max-height:240px;object-fit:cover;border-radius:12px;background:#e4e8ef;cursor:zoom-in}
+.ph-missing{padding:12px;border-radius:12px;background:#f1f3f7;color:var(--muted);font-size:13px}
+.ph-prev:empty{display:none}
+.rv-cam{display:flex;align-items:center;justify-content:center;gap:10px;height:60px;border-radius:16px;background:#eef1f6;border:2px solid #111418;font:700 18px var(--map)}
+.rv-cam svg{width:28px;height:28px}
+.rv-btn.cam{background:#1b4fd8;color:#fff;border-color:#0f2f86}
+#pview{position:fixed;inset:0;z-index:70;background:rgba(10,12,15,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top,0px)) 12px max(12px,env(safe-area-inset-bottom,0px))}
+#pview img{max-width:100%;max-height:calc(100% - 72px);object-fit:contain;border-radius:8px}
+.pv-bar{display:flex;align-items:center;gap:12px;width:100%;max-width:900px;margin-top:12px;color:#fff}
+.pv-cap{flex:1;min-width:0;font-size:14px;line-height:1.35}
+.pv-x{height:48px;padding:0 18px;border-radius:12px;background:#fff;color:#111418;font:700 16px var(--map)}
 .rv-list{display:flex;flex-direction:column;gap:8px}
 .rv-row{display:flex;gap:12px;align-items:center;text-align:left;min-height:64px;padding:8px 12px;border-radius:16px;background:#f1f3f7}
 .rv-row b{display:block;font:700 17px var(--map)}.rv-row small{color:var(--muted);font-size:13.5px}
@@ -424,6 +435,9 @@ html,body{overscroll-behavior:none}
   <div id="xmodal" hidden><div class="xback" id="xback"></div><div class="xpanel plate" role="dialog" aria-modal="true" aria-labelledby="xtitle" id="xpanel"></div></div>
 </div>
 <div id="ghost" hidden></div>
+<input type="file" id="camIn" accept="image/*" capture="environment" hidden>
+<input type="file" id="picIn" accept="image/*" hidden>
+<div id="pview" hidden><img alt="Photo"><div class="pv-bar"><span class="pv-cap"></span><button type="button" class="pv-x" aria-label="Close photo">Close</button></div></div>
 
 <script>
 (function(){
@@ -481,6 +495,7 @@ var IC={
  play:'<circle cx="12" cy="12" r="9" '+S+'/><path d="M10 8.5l5.5 3.5-5.5 3.5z" fill="currentColor"/>',
  spark:'<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8" '+S+'/>',
  ok:'<path d="M5 12.5l4.5 4.5L19 7.5" '+S+' stroke-width="2.4"/>',
+ camera:'<path d="M3 8.5A2 2 0 0 1 5 6.5h2.2l1.4-2h6.8l1.4 2H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" '+S+'/><circle cx="12" cy="13" r="3.6" '+S+'/>',
  tap:'<circle cx="12" cy="9" r="3.5" '+S+'/><path d="M12 15v6M9 18h6" '+S+'/>'
 };
 function ico(n){return svgI(IC[n])}
@@ -726,7 +741,7 @@ function renderItems(){
 }
 function drawItem(it){var t=TYPE[it.type],isSel=sel&&sel.kind==="item"&&sel.id===it.id;
   var g=el("g",{class:"item fam-"+t.fam+(isSel?" sel":""),"data-id":it.id},gItems);
-  g.innerHTML='<circle class="ring" r="20" fill="rgba(255,195,0,.4)" stroke="#111418" stroke-width="2.4"/><circle r="18" fill="transparent"/><g filter="url(#sh)">'+token(t,it.color)+'</g>';
+  g.innerHTML='<circle class="ring" r="20" fill="rgba(255,195,0,.4)" stroke="#111418" stroke-width="2.4"/><circle r="18" fill="transparent"/><g filter="url(#sh)">'+token(t,it.color)+'</g>'+(it.photo?camBadge(12,-12):"");
   var txt=it.label||(t.id==="start"||t.id==="finish"?t.name:"");
   if(txt){var always=isSel||t.id==="flag"||t.id==="start"||t.id==="finish";var lg=el("g",{class:always?"":"l2"},g);
     label(lg,String(txt).slice(0,40),0,30,"middle","big",isSel?300:always?95:70)}
@@ -739,7 +754,7 @@ function drawCluster(grp){var cx=0,cy=0;grp.forEach(function(o){cx+=o.x;cy+=o.y}
   var fam={};grp.forEach(function(o){fam[TYPE[o.type].fam]=1});g.setAttribute("class","cluster "+Object.keys(fam).map(function(f){return "fam-"+f}).join(" "));
   posEls.push({el:g,x:cx,y:cy,kind:"item"})}
 function newId(p){return (p||"i")+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
-function body(it){var o={type:it.type,x:it.x,y:it.y,label:it.label||"",color:it.color||"",side:it.side||""};if(it.rep)o.rep=it.rep;return o}
+function body(it){var o={type:it.type,x:it.x,y:it.y,label:it.label||"",color:it.color||"",side:it.side||""};if(it.rep)o.rep=it.rep;if(it.photo)o.photo=it.photo;return o}
 function putItem(it,noUndo,prev){items.set(it.id,it);store("items",it.id,body(it));renderItems();if(sel&&sel.id===it.id)renderCard()}
 function placeItem(type,w){var t=TYPE[type];if(!t||!canWrite)return;var sp=snap(w.x,w.y);
   var it={id:newId(),type:type,x:sp.x,y:sp.y,side:sp.side,label:"",color:t.color||""};
@@ -755,11 +770,11 @@ function badges(icons,y){var order=[],cnt={};icons.forEach(function(t){if(!TYPE[
   show.forEach(function(t,i){var x=x0+i*16;h2+='<g transform="translate('+x+','+y+') scale(.5)">'+token(TYPE[t])+'</g>';
     if(cnt[t]>1)h2+='<circle cx="'+(x+6)+'" cy="'+(y-7)+'" r="5.5" fill="#111418" stroke="#fff" stroke-width="1"/><text x="'+(x+6)+'" y="'+(y-4.6)+'" text-anchor="middle" fill="#fff" style="font:700 7.5px var(--map)">'+cnt[t]+'</text>'});
   if(extra)h2+='<text x="'+(x0+show.length*16)+'" y="'+(y+3.5)+'" text-anchor="middle" fill="#111418" style="font:700 10px var(--map)">+'+extra+'</text>';return h2}
-function wpBody(o){var b={name:o.name||"",color:o.color||"#d7263d",notes:o.notes||"",icons:o.icons.slice(),x:o.x,y:o.y};if(o.rep)b.rep=o.rep;return b}
+function wpBody(o){var b={name:o.name||"",color:o.color||"#d7263d",notes:o.notes||"",icons:o.icons.slice(),x:o.x,y:o.y};if(o.rep)b.rep=o.rep;if(o.photo)b.photo=o.photo;return b}
 function renderWps(){var gw=$("gWp");gw.textContent="";posEls=posEls.filter(function(p){return p.kind!=="wp"});
   wps.forEach(function(o,id){var isSel=sel&&sel.kind==="wp"&&sel.id===id,g=el("g",{class:"wp"+(isSel?" sel":""),"data-wp":id},gw);
     g.innerHTML='<circle class="ring" cy="-18" r="18" fill="rgba(255,195,0,.4)" stroke="#111418" stroke-width="2.4"/><circle cy="-16" r="17" fill="transparent"/>'+
-      '<g filter="url(#sh)"><path d="M0 0C-3-6-11.5-11-11.5-18.5A11.5 11.5 0 1 1 11.5-18.5C11.5-11 3-6 0 0Z" fill="'+o.color+'" stroke="#fff" stroke-width="2"/></g><circle cy="-18.5" r="4.2" fill="#fff"/>'+badges(o.icons,-41);
+      '<g filter="url(#sh)"><path d="M0 0C-3-6-11.5-11-11.5-18.5A11.5 11.5 0 1 1 11.5-18.5C11.5-11 3-6 0 0Z" fill="'+o.color+'" stroke="#fff" stroke-width="2"/></g><circle cy="-18.5" r="4.2" fill="#fff"/>'+badges(o.icons,-41)+(o.photo?camBadge(10,-28):"");
     if(o.name)label(g,o.name,0,14,"middle","big",isSel?300:90);o.el=g;posEls.push({el:g,x:o.x,y:o.y,wp:o,kind:"wp"});
     g.setAttribute("transform","translate("+o.x+","+o.y+") scale("+1/view.k+")")});schedDeclutter()}
 function renderMarkDecor(){LAYERS.forEach(function(L){L.pts.forEach(function(m){var o=mo[L.id+":"+m.ix];
@@ -992,6 +1007,8 @@ function renderCard(){
         b.onclick=function(){var r=onRiver(it.x,it.y),p=onSide(r,o[0]),prev={x:it.x,y:it.y,side:it.side};it.x=p.x;it.y=p.y;it.side=o[0];putItem(it);
           pushUndo(function(){it.x=prev.x;it.y=prev.y;it.side=prev.side;putItem(it)})};sides.appendChild(b)});
       card.appendChild(h("div",{className:"lbl-s",text:"Facing downstream"}));card.appendChild(sides)}
+    if(it.photo)card.appendChild(photoThumb(it.photo,t.name+(it.rep?" · "+repLine(it.rep):"")));
+    if(canWrite&&(it.photo||t.fam==="hazard")){var pa=[btn("camera",it.photo?"Replace photo":"Add photo",function(){takePhoto(false,function(d){attachPhoto("item",it.id,d)})})];if(it.photo)pa.push(btn("trash","Remove photo",function(){removePhoto("item",it.id)},"danger"));card.appendChild(h("div",{className:"actions"},pa))}
     var inp=h("input",{type:"text",className:"inp",id:"item-label",value:it.label||"",maxLength:40,disabled:!canWrite,placeholder:t.id==="flag"?"Tribe name":t.id==="station"?"Station name":t.id==="marshal"?"Lifeguard name":"Add a label"});
     inp.addEventListener("change",function(){it.label=inp.value.trim();putItem(it)});card.appendChild(inp);
     if(t.id==="flag"){var sw=h("div",{className:"swatches"});TRIBE.forEach(function(c){var b=h("button",{type:"button",className:"swc","aria-pressed":String(it.color===c),"aria-label":"Tribe colour",disabled:!canWrite});b.style.background=c;
@@ -1005,6 +1022,8 @@ function renderCard(){
     card.appendChild(h("div",{className:"chead"},[h("span",{className:"big",html:tokSvg(TYPE.waypoint,o.color,40)}),ni,closeBtn()]));
     card.appendChild(h("div",{className:"sub",text:"Waypoint · "+(ww.r.d<60?ww.txt:"off the river")}));
     if(o.rep)card.appendChild(h("div",{className:"quote",style:"background:#eef1f6",text:repLine(o.rep)}));
+    if(o.photo)card.appendChild(photoThumb(o.photo,(o.name||"Waypoint")+(o.rep?" · "+repLine(o.rep):"")));
+    if(canWrite){var pw=[btn("camera",o.photo?"Replace photo":"Add photo",function(){takePhoto(false,function(d){attachPhoto("wp",o.id,d)})})];if(o.photo)pw.push(btn("trash","Remove photo",function(){removePhoto("wp",o.id)},"danger"));card.appendChild(h("div",{className:"actions"},pw))}
     pinEditor(tgw,o,false).forEach(function(n){card.appendChild(n)});
     var acts=[btn("target","Zoom here",function(){go(centreOn(o.x,o.y,Math.max(view.k,kfit*6)))},"primary")];if(canWrite)acts.push(btn("trash","Delete",function(){delWp(o.id)},"danger"));
     card.appendChild(h("div",{className:"actions"},acts));return}
@@ -1127,6 +1146,7 @@ function openText(cx,cy,w){var ex=$("tinput");if(ex)ex.remove();var a=$("app").g
 document.addEventListener("keydown",function(e){var tag=(e.target.tagName||"").toLowerCase();if(tag==="input"||tag==="textarea")return;
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){e.preventDefault();if(canWrite)undo();return}
   if(e.key==="Escape"&&!$("xmodal").hidden){closeExport();return}
+  if(e.key==="Escape"&&!$("pview").hidden){$("pview").hidden=true;return}
   if(e.key==="Escape"&&riverOn){if(!rvEl("rvSheet").hidden)rvEl("rvSheet").hidden=true;else exitRiver();return}
   if(e.key==="Escape"){if(armed||tool){setArmed(null);setTool(null);if(tab==="draw")renderTray()}else select(null);closePops()}
   if((e.key==="Delete"||e.key==="Backspace")&&sel&&canWrite){if(sel.kind==="wp"){e.preventDefault();delWp(sel.id)}else if(sel.kind==="item"){e.preventDefault();delItem(sel.id)}else if(sel.kind==="ink"){e.preventDefault();removeInk(sel.id)}}});
@@ -1254,6 +1274,37 @@ function tourArt(i){var a=ABG,D="5s";
   }
   return '<svg viewBox="0 0 320 120" aria-hidden="true">'+a+'</svg>'}
 
+/* ---------- Photos: camera capture, shrink, store (phone now, shared later) ---------- */
+var PH={mem:new Map(),idb:null,cb:null};
+function phDB(){return new Promise(function(res){if(PH.idb)return res(PH.idb);try{var r=indexedDB.open("geroh-photos",1);r.onupgradeneeded=function(){r.result.createObjectStore("p")};
+  r.onsuccess=function(){PH.idb=r.result;res(PH.idb)};r.onerror=function(){res(null)}}catch(_){res(null)}})}
+async function phPut(id,data){PH.mem.set(id,data);var d=await phDB();if(d){try{d.transaction("p","readwrite").objectStore("p").put(data,id)}catch(_){}}
+  if(db)store("photos",id,{data:data,at:Date.now()})}
+async function phGet(id){if(!id)return null;if(PH.mem.has(id))return PH.mem.get(id);var d=await phDB();
+  if(d){var v=await new Promise(function(res){try{var q=d.transaction("p").objectStore("p").get(id);q.onsuccess=function(){res(q.result||null)};q.onerror=function(){res(null)}}catch(_){res(null)}});if(v){PH.mem.set(id,v);return v}}
+  if(db){try{var s2=await db.doc("photos/"+id).get();if(s2.exists){var v2=(s2.data()||{}).data;if(typeof v2==="string"&&v2.indexOf("data:image/")===0){PH.mem.set(id,v2);if(d){try{d.transaction("p","readwrite").objectStore("p").put(v2,id)}catch(_){}}return v2}}}catch(_){}}
+  return null}
+function shrinkPhoto(file){return new Promise(function(res,rej){var url=URL.createObjectURL(file),im=new Image();
+  im.onload=function(){var M=1280,w=im.naturalWidth,hh=im.naturalHeight,sc=Math.min(1,M/Math.max(w,hh)),c=document.createElement("canvas");c.width=Math.round(w*sc);c.height=Math.round(hh*sc);
+    c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(url);var q=.72,out=c.toDataURL("image/jpeg",q);while(out.length>380000&&q>.42){q-=.1;out=c.toDataURL("image/jpeg",q)}res(out)};
+  im.onerror=function(){URL.revokeObjectURL(url);rej(new Error("That photo couldn't be read. Try taking it again."))};im.src=url})}
+function takePhoto(camera,cb){var inp=$(camera?"camIn":"picIn");PH.cb=cb;inp.value="";inp.click()}
+function onPhotoPicked(e){var f=e.target.files&&e.target.files[0],cb=PH.cb;PH.cb=null;if(!f||!cb)return;
+  if(riverOn)rvToast("Saving photo…",false);shrinkPhoto(f).then(cb,function(err){if(riverOn)rvToast(err.message,false)})}
+function attachPhoto(kind,id,data){var o=kind==="item"?items.get(id):wps.get(id);if(!o)return;var pid="p"+id+Date.now().toString(36);
+  phPut(pid,data).then(function(){o.photo=pid;if(kind==="item")putItem(o);else putWp(o);renderPhotoBadges();if(riverOn)rvToast("Photo added",false)})}
+function removePhoto(kind,id){var o=kind==="item"?items.get(id):wps.get(id);if(!o)return;delete o.photo;if(kind==="item")putItem(o);else putWp(o)}
+function photoThumb(pid,caption){var im=h("img",{className:"ph-thumb",alt:caption||"Photo",title:"Tap to view full screen"});im.onclick=function(){viewPhoto(pid,caption)};
+  phGet(pid).then(function(d){if(d)im.src=d;else{im.replaceWith(h("div",{className:"ph-missing",text:"Photo not on this device yet"}))}});return im}
+function viewPhoto(pid,caption){var v=$("pview");v.hidden=false;var img=v.querySelector("img");img.removeAttribute("src");v.querySelector(".pv-cap").textContent=caption||"";phGet(pid).then(function(d){if(d)img.src=d})}
+function photoAsk(kind,id){var o=kind==="item"?items.get(id):wps.get(id);if(!o)return;
+  var tb=h("button",{type:"button",className:"rv-btn cam",html:svgI(IC.camera)+"<span>Take photo</span>"}),sk=h("button",{type:"button",className:"rv-btn",html:svgI(IC.close)+"<span>Skip</span>"});
+  tb.onclick=function(){rvEl("rvSheet").hidden=true;takePhoto(true,function(d){attachPhoto(kind,id,d)})};sk.onclick=function(){rvEl("rvSheet").hidden=true};
+  sheet("Add a photo?",[h("p",{text:"A quick photo helps the team see exactly what's there."}),h("div",{className:"rv-grid two"},[tb,sk])],false,true)}
+function camBadge(x,y){return '<g transform="translate('+x+','+y+')"><circle r="7.5" fill="#111418" stroke="#fff" stroke-width="1.5"/><rect x="-4.2" y="-2.6" width="8.4" height="6" rx="1.3" fill="#fff"/><rect x="-1.6" y="-4.2" width="3.2" height="2" rx=".6" fill="#fff"/><circle cy=".4" r="1.7" fill="#111418"/></g>'}
+function renderPhotoBadges(){renderItems();renderWps()}
+function photoCount(){var n=0;items.forEach(function(it){if(it.photo)n++});wps.forEach(function(o){if(o.photo)n++});return n}
+
 /* ---------- River mode: GPS, giant buttons, field reports ---------- */
 var riverOn=false,following=true,gps=null,geoWatch=null,rvToastT=0,myName="";
 try{myName=localStorage.getItem("geroh-name")||""}catch(_){}
@@ -1307,21 +1358,24 @@ function rvPlace(type){if(!canWrite){if(fbFs)joinSheet();else rvToast("View only
   var t=TYPE[type];
   if(t.fam==="point"){var o={id:newId("w"),name:t.name,color:type==="rest"?"#1a9a4b":"#1b4fd8",notes:"",icons:[type],x:sp.x,y:sp.y,rep:rep};putWp(o);pushUndo(function(){delWp(o.id,true)})}
   else{var it={id:newId(),type:type,x:sp.x,y:sp.y,side:"",label:"",color:"",rep:rep};putItem(it);pushUndo(function(){delItem(it.id,true)})}
+  var made=t.fam==="point"?null:{kind:"item",id:it.id};
   try{if(navigator.vibrate)navigator.vibrate(40)}catch(_){}
-  rvToast(t.name+" added"+(sp.gps?" at your position (±"+sp.acc+" m)":" at the crosshair"),true)}
+  rvToast(t.name+" added"+(sp.gps?" at your position (±"+sp.acc+" m)":" at the crosshair"),true);return made}
 function rvToast(text,undoable){var t=rvEl("rvToast");t.innerHTML="";t.appendChild(h("span",{text:text}));
   if(undoable){var u=h("button",{type:"button",text:"Undo"});u.onclick=function(){undo();t.hidden=true};t.appendChild(u)}
   t.hidden=false;clearTimeout(rvToastT);rvToastT=setTimeout(function(){t.hidden=true},6000)}
 function sheet(title,kids,full,noCancel){var sh=rvEl("rvSheet");sh.innerHTML="";sh.classList.toggle("full",!!full);sh.appendChild(h("h3",{text:title}));kids.forEach(function(k){sh.appendChild(k)});
   if(!noCancel){var c=h("button",{type:"button",className:"rv-cancel",text:"Cancel"});c.onclick=function(){sh.hidden=true};sh.appendChild(c)}sh.hidden=false}
 function pickTypes(title,types,cls){var g=h("div",{className:"rv-grid big"});types.forEach(function(id){var b=h("button",{type:"button",className:"rv-btn "+cls,html:tokSvg(TYPE[id],null,48)+"<span></span>"});b.querySelector("span").textContent=id==="tube"?"Tube":TYPE[id].name;
-  b.onclick=function(){rvEl("rvSheet").hidden=true;rvPlace(id)};g.appendChild(b)});sheet(title,[g],true)}
+  b.onclick=function(){rvEl("rvSheet").hidden=true;var m=rvPlace(id);if(m&&TYPE[id].fam==="hazard")photoAsk(m.kind,m.id)};g.appendChild(b)});sheet(title,[g],true)}
 function rvWaypoint(){if(!canWrite){if(fbFs)joinSheet();else rvToast("View only",false);return}var sp=rvSpot("waypoint"),now=Date.now();
   var o={id:newId("w"),name:"",color:"#d7263d",notes:"",icons:[],x:sp.x,y:sp.y,rep:{by:myName||"Someone",at:now,acc:sp.acc,gps:sp.gps}};putWp(o);pushUndo(function(){delWp(o.id,true)});
   try{if(navigator.vibrate)navigator.vibrate(40)}catch(_){}
-  var ta=h("textarea",{className:"inp rv-notes",id:"rvNotes",maxLength:2000,placeholder:"Notes (optional)"}),sub=h("button",{type:"button",className:"rv-go",text:"Submit"});
-  sub.onclick=function(){var v=ta.value.trim();if(v){o.notes=v;putWp(o)}rvEl("rvSheet").hidden=true;rvToast("Waypoint added"+(sp.gps?" at your position (±"+sp.acc+" m)":" at the crosshair"),true)};
-  sheet("Waypoint dropped",[h("p",{text:sp.gps?"Pinned at your position (±"+sp.acc+" m). Add a note if you like.":"Pinned at the crosshair. Add a note if you like."}),ta,sub],false,true);setTimeout(function(){ta.focus()},80)}
+  var ta=h("textarea",{className:"inp rv-notes",id:"rvNotes",maxLength:2000,placeholder:"Notes (optional)"}),sub=h("button",{type:"button",className:"rv-go",text:"Submit"}),pend=null;
+  var prev=h("div",{className:"ph-prev"}),cam=h("button",{type:"button",className:"rv-cam",html:svgI(IC.camera)+"<span>Add photo</span>"});
+  cam.onclick=function(){takePhoto(true,function(d){pend=d;prev.innerHTML="";var im=h("img",{className:"ph-thumb",alt:"Photo to add"});im.src=d;prev.appendChild(im);cam.lastChild.textContent="Retake photo"})};
+  sub.onclick=function(){var v=ta.value.trim();if(v){o.notes=v;putWp(o)}if(pend)attachPhoto("wp",o.id,pend);rvEl("rvSheet").hidden=true;rvToast("Waypoint added"+(sp.gps?" at your position (±"+sp.acc+" m)":" at the crosshair"),true)};
+  sheet("Waypoint dropped",[h("p",{text:sp.gps?"Pinned at your position (±"+sp.acc+" m). Add a note or photo if you like.":"Pinned at the crosshair. Add a note or photo if you like."}),ta,cam,prev,sub],false,true);setTimeout(function(){ta.focus()},80)}
 function nameSheet(then){var inp=h("input",{type:"text",className:"inp rv-name",id:"rvName",maxLength:30,placeholder:"Your name",value:myName,autocomplete:"name"});
   var go2=h("button",{type:"button",className:"rv-go",text:"Start river mode"});
   function ok(){var v=inp.value.trim();if(!v){inp.focus();return}myName=v;try{localStorage.setItem("geroh-name",v)}catch(_){}rvEl("rvSheet").hidden=true;then()}
@@ -1336,7 +1390,7 @@ function rvItemSheet(kind,id){var o=kind==="item"?items.get(id):wps.get(id);if(!
   var del=h("button",{type:"button",className:"rv-btn gone",html:svgI(IC.trash)+"<span>Remove</span>"});
   del.onclick=function(){rvEl("rvSheet").hidden=true;if(kind==="item")delItem(id);else delWp(id);rvToast("Removed",true)};
   var head=h("div",{className:"rv-ihead",html:tokSvg(t,o.color,44)},[h("div",{},[h("b",{text:kind==="item"?(o.label||t.name):(o.name||t.name)}),h("small",{text:o.rep?repLine(o.rep):"Placed during planning"})])]);
-  var kids=[head];if(kind==="wp"&&o.notes)kids.push(h("div",{className:"quote",text:o.notes}));if(canWrite)kids.push(del);
+  var kids=[head];if(o.photo)kids.push(photoThumb(o.photo,(kind==="item"?t.name:"Waypoint")+(o.rep?" · "+repLine(o.rep):"")));if(kind==="wp"&&o.notes)kids.push(h("div",{className:"quote",text:o.notes}));if(canWrite)kids.push(del);
   sheet(kind==="item"?(o.label||t.name):(o.name||t.name),kids)}
 
 /* ---------- Guided tour ---------- */
@@ -1425,7 +1479,7 @@ function renderExport(msg){var pnl=$("xpanel"),keep=document.activeElement&&docu
   var hc=hazCount();pnl.appendChild(group("Number of hazards",hc+" hazard"+(hc===1?"":"s")+" marked on the map",HAZ,"hazards"));
   pnl.appendChild(group("Risk of flash flood","",FLOOD,"flood"));
   var go2=h("button",{type:"button",className:"btn primary big",id:"xgo",html:ico("dl")+"<span>Download PDF</span>",disabled:exporting});go2.onclick=doExport;
-  pnl.appendChild(h("div",{className:"xfoot"},[h("span",{className:"xmsg",id:"xmsg",text:msg||(1+SECS.length)+" pages · A4 landscape"}),go2]))}
+  pnl.appendChild(h("div",{className:"xfoot"},[h("span",{className:"xmsg",id:"xmsg",text:msg||(1+SECS.length+Math.ceil(photoCount()/6))+" pages · A4 landscape"}),go2]))}
 function setXmsg(t){var m=$("xmsg");if(m)m.textContent=t}
 var jsLoad=null;
 function loadJsPDF(){if(window.jspdf)return Promise.resolve();if(jsLoad)return jsLoad;
@@ -1499,6 +1553,22 @@ async function doExport(){if(exporting)return;exporting=true;var b=$("xgo");if(b
       f.wps.forEach(function(w){c2.push("#Waypoint: "+(w.name||"Unnamed"));if(w.icons.length)c2.push(iconList(w.icons));if(w.notes)c2.push(w.notes)});
       var c3=[];if(notes[s.id])c3.push(notes[s.id]);f.marks.forEach(function(m){c3.push("#"+m.n);if(m.icons.length)c3.push(iconList(m.icons));if(m.notes)c3.push(m.notes)});
       col(0,"Rapids and exits",c1);col(1,"Counters and waypoints",c2);col(2,"Team notes",c3)}
+    /* photos pages */
+    var phs=[];items.forEach(function(it){var t=TYPE[it.type];if(it.photo&&t&&layerOn[t.fam])phs.push({pid:it.photo,title:it.label||t.name,x:it.x,y:it.y,rep:it.rep,notes:""})});
+    if(layerOn.wp)wps.forEach(function(o){if(o.photo)phs.push({pid:o.photo,title:o.name||"Waypoint",x:o.x,y:o.y,rep:o.rep,notes:o.notes||""})});
+    phs.sort(function(a,b2){return onRiver(a.x,a.y).s-onRiver(b2.x,b2.y).s});
+    if(phs.length){setXmsg("Adding photos…");var pcw=(CW-12)/3,pih=56,pch=86;
+      for(var pi=0;pi<phs.length;pi++){var P2=phs[pi],slot=pi%6;if(slot===0){doc.addPage();head("Photos","In river order, upstream to downstream")}
+        var data=await phGet(P2.pid);var cx=M+(slot%3)*(pcw+6),cy=22+Math.floor(slot/3)*(pch+6);
+        doc.setFillColor(241,243,247);doc.rect(cx,cy,pcw,pih,"F");
+        if(data){var dim=await new Promise(function(res){var im=new Image();im.onload=function(){res([im.naturalWidth,im.naturalHeight])};im.onerror=function(){res(null)};im.src=data});
+          if(dim){var sc=Math.min(pcw/dim[0],pih/dim[1]),iw=dim[0]*sc,ih=dim[1]*sc;doc.addImage(data,"JPEG",cx+(pcw-iw)/2,cy+(pih-ih)/2,iw,ih)}}
+        else{doc.setFontSize(8);doc.setTextColor(152,162,176);doc.text("Photo not on this device",cx+pcw/2,cy+pih/2,{align:"center"})}
+        var wr=onRiver(P2.x,P2.y),sc2=secOfIdx(wr.i),ty=cy+pih+5;doc.setTextColor(17,20,24);doc.setFont("helvetica","bold");doc.setFontSize(9.5);doc.text(pdfText(P2.title),cx,ty);
+        doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(91,101,115);var lines=["Section "+sc2.n+" "+sc2.name+", km "+(wr.s*MPU/1000).toFixed(2)];
+        if(P2.rep)lines.push("Added by "+P2.rep.by+", "+new Date(P2.rep.at).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}));
+        var yy=ty+4.2;lines.forEach(function(l){doc.text(pdfText(l),cx,yy);yy+=3.8});
+        if(P2.notes){doc.setTextColor(17,20,24);doc.text(doc.splitTextToSize(pdfText(P2.notes),pcw).slice(0,3),cx,yy+0.6)}}}
     var np=doc.getNumberOfPages();for(var pg=1;pg<=np;pg++){doc.setPage(pg);doc.setFontSize(8);doc.setTextColor(152,162,176);doc.text("Page "+pg+" of "+np+"  |  Sungai Geroh race map  |  For planning, not navigation",PW-M,207,{align:"right"})}
     var blob=doc.output("blob"),fname="Sungai-Geroh-briefing-"+now.toISOString().slice(0,10)+".pdf";window.__lastPdf=blob;
     if(!dl){try{var u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=fname;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000);setXmsg("Downloaded "+fname)}
@@ -1506,6 +1576,7 @@ async function doExport(){if(exporting)return;exporting=true;var b=$("xgo");if(b
     setXmsg("Confirm the download…");await dl.save({filename:fname,data:blob});setXmsg("Saved "+fname);
   }catch(e){setXmsg(e&&e.code==="declined"?"Download cancelled.":e&&e.code==="rate_limited"?"A download prompt is already open.":"Could not export: "+(e&&e.message||"unknown error"))}
   finally{exporting=false;var b2=$("xgo");if(b2)b2.disabled=false}}
+$("camIn").addEventListener("change",onPhotoPicked);$("picIn").addEventListener("change",onPhotoPicked);$("pview").addEventListener("click",function(e){if(e.target.tagName!=="IMG")$("pview").hidden=true});
 $("bExport").innerHTML=ico("dl")+"<span>Export</span>";$("bRiver").innerHTML=svgI('<path d="M2 9c3 0 3-2 6-2s3 2 6 2 3-2 6-2M2 15c3 0 3-2 6-2s3 2 6 2 3-2 6-2" '+S+' stroke-width="2.2"/>')+"<span>River mode</span>";$("bRiver").onclick=enterRiver;$("bExport").onclick=openExport;$("xback").onclick=closeExport;
 
 /* ---------- Saving: shared plan when available, this device otherwise ---------- */
@@ -1522,11 +1593,12 @@ function store(col,id,data){if(db)chain(col+"/"+id,function(){return db.doc(col+
 function unstore(col,id){if(db)chain(col+"/"+id,function(){return db.doc(col+"/"+id).delete()});else saveLocal()}
 function num(v,d){return typeof v==="number"&&isFinite(v)?v:d}
 function hex(c){return typeof c==="string"&&/^#[0-9a-f]{6}$/i.test(c)?c:""}
-function cleanItem(id,v){if(!v||!TYPE[v.type]||TYPE[v.type].fam==="point")return null;return{id:id,type:v.type,x:num(v.x,600),y:num(v.y,500),label:typeof v.label==="string"?v.label.slice(0,40):"",color:hex(v.color),side:/^[LMR]$/.test(v.side)?v.side:"",rep:cleanRep(v.rep)}}
+function cleanItem(id,v){if(!v||!TYPE[v.type]||TYPE[v.type].fam==="point")return null;return{id:id,type:v.type,x:num(v.x,600),y:num(v.y,500),label:typeof v.label==="string"?v.label.slice(0,40):"",color:hex(v.color),side:/^[LMR]$/.test(v.side)?v.side:"",rep:cleanRep(v.rep),photo:cleanPid(v.photo)}}
 function cleanRep(r){if(!r||typeof r!=="object")return undefined;var at=num(r.at,0);if(!at)return undefined;
   return{by:typeof r.by==="string"?r.by.slice(0,30):"Someone",at:at,acc:typeof r.acc==="number"&&isFinite(r.acc)?Math.round(r.acc):null,gps:!!r.gps}}
+function cleanPid(v){return typeof v==="string"&&/^[A-Za-z0-9_-]{1,80}$/.test(v)?v:undefined}
 function cleanIcons(a){return Array.isArray(a)?a.filter(function(t){return typeof t==="string"&&TYPE[t]&&t!=="waypoint"}).slice(0,24):[]}
-function cleanWp(id,v){if(!v)return null;return{id:id,name:typeof v.name==="string"?v.name.slice(0,40):"",color:hex(v.color)||"#d7263d",notes:typeof v.notes==="string"?v.notes.slice(0,2000):"",icons:cleanIcons(v.icons),x:num(v.x,600),y:num(v.y,500),rep:cleanRep(v.rep)}}
+function cleanWp(id,v){if(!v)return null;return{id:id,name:typeof v.name==="string"?v.name.slice(0,40):"",color:hex(v.color)||"#d7263d",notes:typeof v.notes==="string"?v.notes.slice(0,2000):"",icons:cleanIcons(v.icons),x:num(v.x,600),y:num(v.y,500),rep:cleanRep(v.rep),photo:cleanPid(v.photo)}}
 function cleanMx(v){if(!v)return null;return{color:hex(v.color),notes:typeof v.notes==="string"?v.notes.slice(0,2000):"",icons:cleanIcons(v.icons)}}
 function cleanInk(v){if(!v||["pen","hl","arrow","text"].indexOf(v.kind)<0)return null;var c=hex(v.color)||"#111418";
   if(v.kind==="text"){if(typeof v.text!=="string"||!v.text.trim())return null;return{kind:"text",color:c,text:v.text.slice(0,120),x:num(v.x,0),y:num(v.y,0)}}
