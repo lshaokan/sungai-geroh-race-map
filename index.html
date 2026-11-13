@@ -256,8 +256,8 @@ textarea.inp{min-height:80px;resize:vertical;line-height:1.4}
 .rv-btn.ok svg,.rv-btn.gone svg{width:40px;height:40px}
 .rv-btn:active{transform:scale(.96)}
 .rv-grid.two{grid-template-columns:1fr 1fr}
-.rv-grid.haz5{grid-template-columns:repeat(2,1fr);grid-auto-rows:1fr;flex:1;min-height:0}
-.rv-grid.haz5 .rv-btn:last-child:nth-child(odd){grid-column:1/-1}
+.rv-grid.big{grid-template-columns:repeat(2,1fr);grid-auto-rows:1fr;flex:1;min-height:0}
+.rv-grid.big .rv-btn:last-child:nth-child(odd){grid-column:1/-1}
 .rv-sheet.full{top:0;max-height:none;border-radius:0;padding-top:max(18px,env(safe-area-inset-top,0px))}
 .rv-sheet.full .rv-btn{min-height:0;height:100%;font-size:clamp(23px,6vmin,44px);padding:8px 6px 12px;gap:2px}
 .rv-sheet.full .rv-btn svg{flex:1 1 0;min-height:0;width:100%;height:100%;max-width:100%}
@@ -266,7 +266,7 @@ textarea.inp{min-height:80px;resize:vertical;line-height:1.4}
 .rv-sheet:not(.full) .rv-btn{min-height:96px}
 #rvGrid .rv-btn{min-height:clamp(110px,17vh,170px);font-size:clamp(21px,5vmin,30px);padding:6px 6px 10px;gap:0}
 #rvGrid .rv-btn svg{flex:1 1 0;min-height:0;width:100%;height:100%;max-width:100%}
-@media (orientation:landscape) and (min-width:700px){#rvGrid{grid-template-columns:repeat(4,1fr)}.rv-grid.haz5{grid-template-columns:repeat(3,1fr)}.rv-grid.haz5 .rv-btn:last-child:nth-child(odd){grid-column:span 2}}
+@media (orientation:landscape) and (min-width:700px){#rvGrid{grid-template-columns:repeat(4,1fr)}.rv-grid.big{grid-template-columns:repeat(3,1fr)}.rv-grid.big .rv-btn:last-child:nth-child(odd){grid-column:span 2}}
 @media (max-height:500px){#rvGrid .rv-btn{min-height:76px;flex-direction:row;gap:8px;font-size:20px}#rvGrid .rv-btn svg{flex:none;width:52px;height:52px}.rv-exit,.rv-gps,.rv-rec{height:48px;min-height:48px}.rv-rec{width:48px}}
 .rv-sheet{position:absolute;left:0;right:0;bottom:0;max-height:85%;overflow:auto;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -12px 40px -10px rgba(0,0,0,.45);
   padding:20px max(16px,env(safe-area-inset-right,0px)) max(18px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px;box-sizing:border-box}
@@ -275,6 +275,7 @@ textarea.inp{min-height:80px;resize:vertical;line-height:1.4}
 .rv-cancel{height:56px;border-radius:16px;background:#eef1f6;font:700 17px var(--map)}
 .rv-go{height:60px;border-radius:16px;background:#1b4fd8;color:#fff;font:700 18px var(--map)}
 .rv-name{font-size:20px!important;padding:14px 16px!important}
+.rv-notes{font-size:18px!important;min-height:140px;padding:14px 16px!important}
 .rv-list{display:flex;flex-direction:column;gap:8px}
 .rv-row{display:flex;gap:12px;align-items:center;text-align:left;min-height:64px;padding:8px 12px;border-radius:16px;background:#f1f3f7}
 .rv-row b{display:block;font:700 17px var(--map)}.rv-row small{color:var(--muted);font-size:13.5px}
@@ -532,7 +533,7 @@ var G={
 var TYPES=[
  {id:"start",fam:"race",name:"Start",short:"Start"},{id:"finish",fam:"race",name:"Finish",short:"Finish"},
  {id:"tube",fam:"race",name:"River tube",short:"Tube"},{id:"flag",fam:"race",name:"Tribe flag",short:"Flag",color:"#d7263d"},
- {id:"station",fam:"race",name:"Game station",short:"Station"},{id:"boat",fam:"race",name:"Boat",short:"Boat"},{id:"truck",fam:"race",name:"Truck",short:"Truck"},
+ {id:"station",fam:"race",name:"Game station",short:"Station"},{id:"boat",fam:"race",name:"Boat",short:"Boat"},{id:"truck",fam:"race",name:"Lorry",short:"Lorry"},
  {id:"ambulance",fam:"safety",name:"Ambulance",short:"Ambulance"},{id:"firstaid",fam:"safety",name:"First aid post",short:"First aid"},
  {id:"marshal",fam:"safety",name:"Lifeguard",short:"Lifeguard"},{id:"rope",fam:"safety",name:"Throw rope",short:"Rope"},
  {id:"strainer",fam:"hazard",name:"Strainer",short:"Strainer"},{id:"debris",fam:"hazard",name:"Debris",short:"Debris"},{id:"rocks",fam:"hazard",name:"Sharp rocks",short:"Rocks"},
@@ -1246,7 +1247,7 @@ function tourArt(i){var a=ABG,D="5s";
   case 99:a+=rv(9,' opacity=".6"')+
       '<g transform="translate(150,58)"><circle r="16" fill="rgba(27,79,216,.15)">'+AN("r","10;20;10",null,"2s")+'</circle><circle r="7" fill="#fff"/><circle r="5" fill="#1b4fd8"/></g>'+
       '<g opacity="0" transform="translate(150,46)">'+AN("opacity","0;0;1;1;0","0;.45;.5;.92;1","5s")+tk("strainer",.6)+'</g>'+
-      [["hazard","#ffc300"],["tube","#fff"],["ambulance","#fff"]].map(function(b2,ix){var x=40+ix*84;return '<g><rect x="'+x+'" y="88" width="76" height="26" rx="8" fill="'+b2[1]+'" stroke="#111418" stroke-width="2">'+(ix===0?AN("stroke-width","2;2;4;2;2","0;.35;.42;.5;1","5s"):"")+'</rect>'+at(x+16,101,tk(b2[0],.42))+txt(x+30,105,["Hazard","Tube","Amb."][ix],10,700,"#111418")+'</g>'}).join("")+
+      [["hazard","#ffc300"],["truck","#fff"],["waypoint","#fff"]].map(function(b2,ix){var x=40+ix*84;return '<g><rect x="'+x+'" y="88" width="76" height="26" rx="8" fill="'+b2[1]+'" stroke="#111418" stroke-width="2">'+(ix===0?AN("stroke-width","2;2;4;2;2","0;.35;.42;.5;1","5s"):"")+'</rect>'+at(x+16,101,tk(b2[0],.42))+txt(x+30,105,["Hazard","External","Waypoint"][ix],9.5,700,"#111418")+'</g>'}).join("")+
       '<rect x="230" y="10" width="80" height="22" rx="7" fill="#fff"/><circle cx="241" cy="21" r="4" fill="#1a9a4b"/>'+txt(250,25,"GPS ±8 m",9.5,600);break;
   case 15:a+=rv(9)+at(304,40,tk("finish",.6))+'<g>'+tk("tube",.6)+'<animateMotion dur="5s" repeatCount="indefinite" keyPoints="0;1;1" keyTimes="0;.7;1" calcMode="linear" path="'+RV+'"/></g>'+
       '<g transform="translate(304,40)" opacity="0">'+AN("opacity","0;0;1;0","0;.7;.75;1","5s")+[0,45,90,135,180,225,270,315].map(function(d){return '<path d="M0-16V-24" stroke="#ffc300" stroke-width="3" stroke-linecap="round" transform="rotate('+d+')"/>'}).join("")+'</g>';break;
@@ -1256,8 +1257,8 @@ function tourArt(i){var a=ABG,D="5s";
 /* ---------- River mode: GPS, giant buttons, field reports ---------- */
 var riverOn=false,following=true,gps=null,geoWatch=null,rvToastT=0,myName="";
 try{myName=localStorage.getItem("geroh-name")||""}catch(_){}
-var RV_BTNS=[["hazard","Hazard","haz"],["tube","Tube",""],["ambulance","Ambulance",""],["station","Station",""]];
-var HAZ_TYPES=["strainer","debris","rocks","wires","hazard"];
+var RV_BTNS=[["hazard","Hazard","haz"],["truck","External",""],["waypoint","Waypoint",""],["station","Station",""]];
+var HAZ_TYPES=["strainer","debris","rocks","wires","hazard"],EXT_TYPES=["ambulance","truck","tube"];
 function ll2w(lat,lon){return{x:(lon-SAT_LON0)*SAT_S,y:(SAT_LAT0-lat)*SAT_S}}
 function rvEl(id){return document.getElementById(id)}
 function buildRiver(){var r=rvEl("river");r.innerHTML=
@@ -1269,7 +1270,7 @@ function buildRiver(){var r=rvEl("river");r.innerHTML=
   '<div class="rv-grid" id="rvGrid"></div>'+
   '<div class="rv-sheet" id="rvSheet" hidden></div>';
   var g=rvEl("rvGrid");RV_BTNS.forEach(function(bt){var b=h("button",{type:"button",className:"rv-btn "+bt[2],html:tokSvg(TYPE[bt[0]],null,48)+"<span></span>"});b.querySelector("span").textContent=bt[1];
-    b.onclick=function(){if(bt[0]==="hazard")hazSheet();else rvPlace(bt[0])};g.appendChild(b)});
+    b.onclick=function(){if(bt[1]==="Hazard")pickTypes("What's the hazard?",HAZ_TYPES,"haz");else if(bt[1]==="External")pickTypes("External",EXT_TYPES,"");else if(bt[1]==="Waypoint")rvWaypoint();else rvPlace(bt[0])};g.appendChild(b)});
   rvEl("rvExit").onclick=exitRiver;rvEl("rvRec").onclick=function(){following=true;rvEl("rvRec").hidden=true;rvEl("rvCross").hidden=true;if(gps)rvFollow(true)}}
 function rvFree(){var r=svg.getBoundingClientRect(),t=rvEl("river").querySelector(".rv-top").getBoundingClientRect(),g=rvEl("rvGrid").getBoundingClientRect();
   return{t:t.bottom-r.top+8,b:r.bottom-g.top+8,l:12,r:12,w:r.width,h:r.height}}
@@ -1300,7 +1301,7 @@ function renderMe(){var g=$("gMe");if(!g)return;g.textContent="";if(!riverOn||!g
   if(gps.heading!=null)el("path",{d:"M0-22L7-8H-7Z",fill:"#1b4fd8",transform:"rotate("+gps.heading+")"},d);
   el("circle",{r:10,fill:"#fff"},d);el("circle",{r:7,fill:"#1b4fd8"},d)}
 function rvSpot(type){var useGps=following&&gps,p=useGps?{x:gps.x,y:gps.y}:rvCentreWorld();
-  if(type==="tube"||TYPE[type].fam==="hazard"){var r=onRiver(p.x,p.y);if(r.d<25)p={x:r1(r.px),y:r1(r.py)}}
+  if(type==="tube"||(TYPE[type]&&TYPE[type].fam==="hazard")){var r=onRiver(p.x,p.y);if(r.d<25)p={x:r1(r.px),y:r1(r.py)}}
   return{x:r1(p.x),y:r1(p.y),gps:!!useGps,acc:useGps?Math.round(gps.acc):null}}
 function rvPlace(type){if(!canWrite){if(fbFs)joinSheet();else rvToast("View only",false);return}var sp=rvSpot(type),now=Date.now(),rep={by:myName||"Someone",at:now,acc:sp.acc,gps:sp.gps};
   var t=TYPE[type];
@@ -1311,10 +1312,16 @@ function rvPlace(type){if(!canWrite){if(fbFs)joinSheet();else rvToast("View only
 function rvToast(text,undoable){var t=rvEl("rvToast");t.innerHTML="";t.appendChild(h("span",{text:text}));
   if(undoable){var u=h("button",{type:"button",text:"Undo"});u.onclick=function(){undo();t.hidden=true};t.appendChild(u)}
   t.hidden=false;clearTimeout(rvToastT);rvToastT=setTimeout(function(){t.hidden=true},6000)}
-function sheet(title,kids,full){var sh=rvEl("rvSheet");sh.innerHTML="";sh.classList.toggle("full",!!full);sh.appendChild(h("h3",{text:title}));kids.forEach(function(k){sh.appendChild(k)});
-  var c=h("button",{type:"button",className:"rv-cancel",text:"Cancel"});c.onclick=function(){sh.hidden=true};sh.appendChild(c);sh.hidden=false}
-function hazSheet(){var g=h("div",{className:"rv-grid haz5"});HAZ_TYPES.forEach(function(id){var b=h("button",{type:"button",className:"rv-btn haz",html:tokSvg(TYPE[id],null,48)+"<span></span>"});b.querySelector("span").textContent=TYPE[id].name;
-  b.onclick=function(){rvEl("rvSheet").hidden=true;rvPlace(id)};g.appendChild(b)});sheet("What's the hazard?",[g],true)}
+function sheet(title,kids,full,noCancel){var sh=rvEl("rvSheet");sh.innerHTML="";sh.classList.toggle("full",!!full);sh.appendChild(h("h3",{text:title}));kids.forEach(function(k){sh.appendChild(k)});
+  if(!noCancel){var c=h("button",{type:"button",className:"rv-cancel",text:"Cancel"});c.onclick=function(){sh.hidden=true};sh.appendChild(c)}sh.hidden=false}
+function pickTypes(title,types,cls){var g=h("div",{className:"rv-grid big"});types.forEach(function(id){var b=h("button",{type:"button",className:"rv-btn "+cls,html:tokSvg(TYPE[id],null,48)+"<span></span>"});b.querySelector("span").textContent=id==="tube"?"Tube":TYPE[id].name;
+  b.onclick=function(){rvEl("rvSheet").hidden=true;rvPlace(id)};g.appendChild(b)});sheet(title,[g],true)}
+function rvWaypoint(){if(!canWrite){if(fbFs)joinSheet();else rvToast("View only",false);return}var sp=rvSpot("waypoint"),now=Date.now();
+  var o={id:newId("w"),name:"",color:"#d7263d",notes:"",icons:[],x:sp.x,y:sp.y,rep:{by:myName||"Someone",at:now,acc:sp.acc,gps:sp.gps}};putWp(o);pushUndo(function(){delWp(o.id,true)});
+  try{if(navigator.vibrate)navigator.vibrate(40)}catch(_){}
+  var ta=h("textarea",{className:"inp rv-notes",id:"rvNotes",maxLength:2000,placeholder:"Notes (optional)"}),sub=h("button",{type:"button",className:"rv-go",text:"Submit"});
+  sub.onclick=function(){var v=ta.value.trim();if(v){o.notes=v;putWp(o)}rvEl("rvSheet").hidden=true;rvToast("Waypoint added"+(sp.gps?" at your position (±"+sp.acc+" m)":" at the crosshair"),true)};
+  sheet("Waypoint dropped",[h("p",{text:sp.gps?"Pinned at your position (±"+sp.acc+" m). Add a note if you like.":"Pinned at the crosshair. Add a note if you like."}),ta,sub],false,true);setTimeout(function(){ta.focus()},80)}
 function nameSheet(then){var inp=h("input",{type:"text",className:"inp rv-name",id:"rvName",maxLength:30,placeholder:"Your name",value:myName,autocomplete:"name"});
   var go2=h("button",{type:"button",className:"rv-go",text:"Start river mode"});
   function ok(){var v=inp.value.trim();if(!v){inp.focus();return}myName=v;try{localStorage.setItem("geroh-name",v)}catch(_){}rvEl("rvSheet").hidden=true;then()}
@@ -1329,7 +1336,8 @@ function rvItemSheet(kind,id){var o=kind==="item"?items.get(id):wps.get(id);if(!
   var del=h("button",{type:"button",className:"rv-btn gone",html:svgI(IC.trash)+"<span>Remove</span>"});
   del.onclick=function(){rvEl("rvSheet").hidden=true;if(kind==="item")delItem(id);else delWp(id);rvToast("Removed",true)};
   var head=h("div",{className:"rv-ihead",html:tokSvg(t,o.color,44)},[h("div",{},[h("b",{text:kind==="item"?(o.label||t.name):(o.name||t.name)}),h("small",{text:o.rep?repLine(o.rep):"Placed during planning"})])]);
-  sheet(kind==="item"?(o.label||t.name):(o.name||t.name),canWrite?[head,del]:[head])}
+  var kids=[head];if(kind==="wp"&&o.notes)kids.push(h("div",{className:"quote",text:o.notes}));if(canWrite)kids.push(del);
+  sheet(kind==="item"?(o.label||t.name):(o.name||t.name),kids)}
 
 /* ---------- Guided tour ---------- */
 var TKEY="geroh-tour-done-v1",tourI=-1;
@@ -1348,7 +1356,7 @@ var TOUR=[
  {ic:"pinI",el:"#dock",t:"Waypoints",b:"Drop a waypoint anywhere, name it and pick a colour. Then tap it and tap or drag icons onto it, like Rest, Water or a hazard. Drag a chip out of its card to take it off.",enter:function(){setTab("point")}},
  {ic:"pen",el:"#dock",t:"Draw on the map",b:"Apple Pencil or the mouse draws while your finger still moves the map. Choose pen, marker, arrow, text note or eraser in six colours. Tap ✕ or press Esc to stop drawing.",enter:function(){setTab("draw")}},
  {ic:"undo",el:".undo",t:"Undo",b:"Reverses your last change: a placed counter, a move, a drawing, an icon. Ctrl+Z works too.",enter:function(){setTool(null);setTab("race")}},
- {ic:"pinI",el:"#bRiver",t:"River mode",b:"On the water, press River mode. The map follows your GPS and giant buttons drop a hazard, tube, ambulance or station right where you are. Everything you add is stamped with your name and the time.",enter:function(){closeExport()}},
+ {ic:"pinI",el:"#bRiver",t:"River mode",b:"On the water, press River mode. The map follows your GPS and giant buttons drop a hazard, an external point (ambulance, lorry or tube), a waypoint with notes, or a station right where you are. Everything you add is stamped with your name and the time.",enter:function(){closeExport()}},
  {ic:"dl",el:"#bExport",t:"Export a briefing",b:"Makes a PDF for the briefing: the whole river first, then one page per section with everything placed and all team notes.",enter:function(){closeExport()}},
  {ic:"dl",el:"#xpanel",t:"Set today's conditions",b:"Pick the river level, weather, number of hazards and flash flood risk. They print as big coloured boxes on page one. Then press Download PDF.",enter:function(){openExport()}},
  {ic:"play",t:"You're ready",b:"Replay this tour any time from the ? button. On the shared Claude link your changes reach the whole team; on the website they stay on your device.",enter:function(){closeExport();go(fitView())}}
