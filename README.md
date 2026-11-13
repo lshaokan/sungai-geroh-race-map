@@ -6,6 +6,12 @@ Live site: https://wwsc-river-map.netlify.app
 
 It is a single static page (`index.html`) with no build step.
 
+## Satellite photo
+
+Layers → Satellite photo shows Esri World Imagery under the river (website version only; Claude artifacts cannot load outside images). Imagery: Esri, Maxar, Earthstar Geographics, and the GIS User Community.
+
+The river line started from the team's Google My Map trace and was then nudged onto the visible channel in the imagery (typically 3 m, at most about 9 m). The REX Camp stretch was re-traced by hand, and the expressway position comes from the imagery.
+
 ## Saving
 
 - Opened as a Claude artifact, the plan is shared live between everyone with access.
