@@ -1925,7 +1925,7 @@ function cleanInk(v){if(!v||["pen","hl","arrow","text"].indexOf(v.kind)<0)return
   return{kind:v.kind,color:c,w:Math.max(.05,Math.min(80,num(v.w,2))),pts:v.pts}}
 function startShared(store_){db=store_;items=new Map();notes={};ink=new Map();wps=new Map();mo={};renderItems();renderInk();renderPins();renderCard();setStatus("Loading plan","");
   var timer=setTimeout(function(){setStatus("Plan not reached yet","warn")},10000);
-  db.collection("items").onSnapshot(function(snap){var next=new Map();snap.docs.forEach(function(d){var cur=items.get(d.id);if(drag===d.id&&cur){next.set(d.id,cur);return}var v=cleanItem(d.id,d.data());if(v)next.set(d.id,v)});
+  var _ic=db.collection("items"),_ion=function(f,e){return db===fbFs?_ic.onSnapshot({includeMetadataChanges:true},f,e):_ic.onSnapshot(f,e)};_ion(function(snap){var next=new Map();snap.docs.forEach(function(d){var cur=items.get(d.id);if(drag===d.id&&cur){next.set(d.id,cur);return}var v=cleanItem(d.id,d.data());if(v)next.set(d.id,v)});
     items=next;if(sel&&sel.kind==="item"&&!items.has(sel.id))sel=null;renderItems();var ae=document.activeElement;if(!(ae&&ae.id==="item-label"))renderCard();
     if(!snap.metadata.fromCache){clearTimeout(timer);setStatus(canWrite?"Live":"View only",canWrite?"ok":"warn")}},function(){clearTimeout(timer);setStatus("Plan unavailable","warn")});
   db.collection("notes").onSnapshot(function(snap){var n={};snap.docs.forEach(function(d){var v=d.data()||{};if(typeof v.text==="string")n[d.id]=v.text});
@@ -1943,7 +1943,7 @@ function startShared(store_){db=store_;items=new Map();notes={};ink=new Map();wp
 }
 
 /* ---------- Shared plan on the website: Firebase (on once FB_CONFIG is set) ---------- */
-var FB_CONFIG=/*FBCONFIG*/null;
+var FB_CONFIG={apiKey:"AIzaSyAIpfVd3TLd_X3fpVntBW8liaQTgKGyTDk",authDomain:"wwsc-river-map-7ab35.firebaseapp.com",projectId:"wwsc-river-map-7ab35",storageBucket:"wwsc-river-map-7ab35.firebasestorage.app",messagingSenderId:"811248411085",appId:"1:811248411085:web:994ec26b88494194ca6484"};
 var fbUid=null,fbFs=null;
 function loadJs(src){return new Promise(function(res,rej){var sc=document.createElement("script");sc.src=src;sc.onload=function(){res()};sc.onerror=function(){rej(new Error("Could not load "+src))};document.head.appendChild(sc)})}
 async function startFirebase(){var B="https://www.gstatic.com/firebasejs/10.12.2/";setStatus("Connecting…","");
