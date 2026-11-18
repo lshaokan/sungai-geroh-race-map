@@ -76,7 +76,7 @@ button:disabled{cursor:default}
 @media (max-width:520px){.tl .ib,.tl .xbtn{width:40px;min-width:40px;height:40px;padding:0}.tl .ib svg{width:20px;height:20px}.brand{margin-right:2px}.brand b{font-size:14px}.status{font-size:10.5px}
   .latest{min-height:40px;padding:6px 8px;margin:4px 0 0 4px;font-size:12px;flex:1 1 0;min-width:0;order:10}
   .tl::after{content:"";flex-basis:100%;height:0;order:8}
-  .tl .rbtn{order:9;margin-top:4px;margin-left:-6px}}
+  .tl .rbtn{order:9;margin-top:4px;margin-left:-6px}.tl .mebtn{order:9;margin-top:4px;margin-left:0}}
 @media (max-height:720px) and (max-width:999px) and (min-height:501px){#card{max-height:30vh}}
 #lpanel{width:min(860px,100%)}
 .rhead{margin:6px 0 -4px;font:700 18px var(--map)}
@@ -107,7 +107,9 @@ button:disabled{cursor:default}
 .lhist button{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:10px;background:#f1f3f7;text-align:left;font-size:13.5px}
 .lhist button.on{background:#fff6d6;box-shadow:inset 0 0 0 2px #ffc300}
 .lnote{font-size:12.5px;color:var(--muted);line-height:1.4}
-.status{cursor:pointer}.status.edit{background:#1b4fd8;color:#fff;font-weight:700;font-size:13px;border-radius:999px;padding:4px 12px;margin-top:4px;align-self:flex-start;min-height:20px}.status.edit i{display:none} .status.warn i{background:var(--hazard)}
+.xbtn.mebtn{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}.xbtn.mebtn:hover{background:#eef1f6}
+.mebtn .av{flex:none;width:24px;height:24px;border-radius:50%;background:#1b4fd8;color:#fff;display:inline-grid;place-items:center;font:700 12.5px var(--ui);font-style:normal}.mebtn.admin .av{background:var(--ink)}
+.xbtn.mebtn.on{box-shadow:inset 0 0 0 1.5px #d6dce5} .status.warn i{background:var(--hazard)}
 .ib{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:var(--ink)}
 @media (hover:hover){.ib:hover,.ib[aria-expanded="true"]{background:var(--hover)}}
 .ib svg{width:20px;height:20px}
@@ -179,6 +181,9 @@ button:disabled{cursor:default}
 .hidrow{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--muted);padding:4px 2px 8px}
 .xpanel.wide{width:min(880px,100%)}#amodal{z-index:44}
 .inp.jsel{appearance:none;-webkit-appearance:none;font:inherit;font-size:16px;padding-right:40px;background:#f1f3f7 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6' fill='none' stroke='%235b6573' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center/18px}
+.inp.bad,.inp.bad:focus{box-shadow:0 0 0 2px #d7263d;background-color:#fff0f1;outline:none}.buzz{animation:buzz .42s cubic-bezier(.36,.07,.19,.97)}
+@keyframes buzz{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
+@media (prefers-reduced-motion:reduce){.buzz{animation:none}}
 .jnote{font-size:12px;color:var(--muted);margin:-4px 0 0}.jlink{border:0;background:none;color:#1b4fd8;font:600 14px var(--map);padding:8px 0;align-self:flex-start;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .who{display:flex;align-items:center;gap:12px}.who b{font-size:17px}.who small{color:var(--muted);font-size:13px}.rolebadge{font:700 11px var(--map);text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:999px;background:#eef1f6;color:#5b6573}.rolebadge.admin{background:#111418;color:#fff}
 .acts{display:flex;flex-direction:column;gap:8px}.acts .btn{justify-content:flex-start}
@@ -484,6 +489,7 @@ html,body{overscroll-behavior:none}
       <button class="ib" id="bHelp" type="button" aria-label="How to use" title="How to use" aria-expanded="false"></button>
       <button class="xbtn" id="bExport" type="button" title="Export a PDF briefing"></button>
       <button class="xbtn rbtn" id="bRiver" type="button" title="River mode: report from the water with GPS"></button>
+      <button class="xbtn mebtn" id="bMe" type="button" hidden></button>
       <button class="latest" id="bLatest" type="button" title="Latest briefing"></button>
       <div class="pop plate" id="pLayers" hidden></div>
       <div class="pop plate" id="pHelp" hidden></div>
@@ -1318,7 +1324,7 @@ document.addEventListener("keydown",function(e){var tag=(e.target.tagName||"").t
 /* ---------- Popovers: layers + help ---------- */
 function closePops(){["pLayers","pHelp"].forEach(function(id){$(id).hidden=true});$("bLayers").setAttribute("aria-expanded","false");$("bHelp").setAttribute("aria-expanded","false")}
 function togglePop(id,btnId){var p=$(id),open=p.hidden;closePops();if(open){p.hidden=false;$(btnId).setAttribute("aria-expanded","true");if(id==="pLayers")renderLayers();p.style.maxHeight="";var q=p.getBoundingClientRect();if(q.bottom>innerHeight-10)p.style.maxHeight=Math.max(160,innerHeight-q.top-12)+"px"}}
-$("status").addEventListener("click",function(){if(!fbFs)return;if(!canWrite)joinSheet("editor");else accountSheet()});$("bLayers").innerHTML=ico("layers");$("bHelp").innerHTML=ico("help");
+$("bMe").onclick=function(){if(!fbFs)return;if(!canWrite)joinSheet("editor");else accountSheet()};$("bLayers").innerHTML=ico("layers");$("bHelp").innerHTML=ico("help");
 $("bLayers").onclick=function(e){e.stopPropagation();togglePop("pLayers","bLayers")};
 $("bHelp").onclick=function(e){e.stopPropagation();togglePop("pHelp","bHelp")};
 document.addEventListener("pointerdown",function(e){if(!e.target.closest(".tl"))closePops()});
@@ -2020,10 +2026,13 @@ async function reportImages(r,imgs,tok){var key=r.id,cache=repImg[key]||(repImg[
 $("bLatest").onclick=openLatest;$("lback").onclick=closeLatest;
 
 /* ---------- Saving: shared plan when available, this device otherwise ---------- */
-function setStatus(text,cls){var s=$("status");
-  if(fbFs&&!canWrite&&/^(View only|Live|Live · saved)$/.test(text)){s.className="status edit";s.lastChild.textContent="Edit";s.title="Join to add or change things";s.setAttribute("role","button");return}
-  if(fbFs&&canWrite&&/^(Live|Live · saved)$/.test(text))text=text+" · "+(myName||"you")+(myRole==="admin"?" (admin)":"");
-  s.className="status "+(cls||"");s.lastChild.textContent=text;s.title=fbFs&&canWrite?"Your account":"";if(fbFs)s.setAttribute("role","button")}
+function setStatus(text,cls){var s=$("status");if(fbFs&&!canWrite&&/^(Live|Live · saved)$/.test(text))text="View only";s.className="status "+(cls||"");s.lastChild.textContent=text}
+/* Header account button: "Edit" when viewing, your initial + name once joined */
+function renderAcct(){var b=$("bMe");if(!b)return;if(!fbFs){b.hidden=true;return}b.hidden=false;b.textContent="";
+  if(!canWrite){b.className="xbtn mebtn";b.innerHTML=ico("pen")+"<span>Edit</span>";b.title="Join to add or change things";b.setAttribute("aria-label","Edit: join to add or change things");return}
+  var nm=(myName||"You").trim(),av=h("i",{className:"av",text:(nm.charAt(0)||"?").toUpperCase()});
+  b.className="xbtn mebtn on"+(myRole==="admin"?" admin":"");b.appendChild(av);b.appendChild(h("span",{text:nm.split(/\s+/)[0].slice(0,14)+(myRole==="admin"?" · admin":"")}));
+  b.title=nm+(myDept?" ("+myDept+")":"")+(myRole==="admin"?", admin":"")+": tap for your account";b.setAttribute("aria-label","Your account: "+nm)}
 function saveLocal(){try{var o={items:[],notes:notes,ink:[],wps:[],mo:mo,brief:brief};items.forEach(function(it){var b=body(it);b.id=it.id;o.items.push(b)});ink.forEach(function(d,id){o.ink.push([id,d])});wps.forEach(function(w,id){o.wps.push([id,wpBody(w)])});localStorage.setItem(KEY,JSON.stringify(o))}catch(_){}}
 function loadLocal(){try{var d=JSON.parse(localStorage.getItem(KEY)||"null");if(!d)return;(d.items||[]).forEach(function(it){var v=cleanItem(it.id,it);if(v)items.set(v.id,v)});notes=d.notes||{};
   (d.ink||[]).forEach(function(p){var v=cleanInk(p[1]);if(v)ink.set(p[0],v)});
@@ -2113,7 +2122,7 @@ async function startFirebase(){var B="https://www.gstatic.com/firebasejs/10.12.2
     if(mem&&mem.exists){var md=mem.data()||{};myRole=md.role==="admin"?"admin":"editor";if(typeof md.name==="string"&&md.name)myName=md.name.slice(0,40);if(typeof md.dept==="string")myDept=md.dept.slice(0,40)}else myRole="viewer";
     setWrite(myRole!=="viewer");startShared(fbFs);logVisit();handleInvite();
   }catch(e){setStatus("Offline · on this device","warn")}}
-function setWrite(ok){canWrite=ok;if(!ok){setArmed(null);setTool(null)}renderTray();updUndo();renderCard();setStatus(ok?"Live":"View only",ok?"ok":"")}
+function setWrite(ok){canWrite=ok;if(!ok){setArmed(null);setTool(null)}renderTray();updUndo();renderCard();setStatus(ok?"Live":"View only",ok?"ok":"warn");renderAcct()}
 /* ---------- Joining: view only → editor (name + department) → admin (+ admin code) ---------- */
 function devName(){var u=navigator.userAgent||"";if(/iPad/.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1))return"iPad";if(/iPhone/.test(u))return"iPhone";
   if(/Android/.test(u))return/Mobile/.test(u)?"Android phone":"Android tablet";if(/Windows/.test(u))return"Windows computer";if(/Macintosh/.test(u))return"Mac";if(/CrOS/.test(u))return"Chromebook";if(/Linux/.test(u))return"Linux computer";return"Other device"}
@@ -2121,25 +2130,30 @@ function logVisit(){if(!fbFs||!fbUid)return;try{fbFs.collection("visits").add({u
 function handleInvite(){var hs=location.hash||"",m=/^#admin=?(.*)$/.exec(hs);if(!m&&hs!=="#join")return;
   try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}
   if(m){if(myRole!=="admin")joinSheet("admin",decodeURIComponent(m[1]||""))}else if(myRole==="viewer")joinSheet("editor")}
+/* first name and surname: at least two words, each with a letter in it */
+function fullName(n){var parts=String(n||"").trim().split(/\s+/).filter(function(w){return /\p{L}/u.test(w)});return parts.length>=2}
+function buzz(fields){fields.forEach(function(f){f.classList.remove("bad","buzz");void f.offsetWidth;f.classList.add("bad","buzz");setTimeout(function(){f.classList.remove("buzz")},450)});try{if(navigator.vibrate)navigator.vibrate([40,40,40])}catch(_){}}
 function deptSelect(cur){var sl=h("select",{className:"inp jsel",id:"jDept","aria-label":"Department"});sl.appendChild(h("option",{value:"",text:"Department…"}));
   DEPT_TOP.forEach(function(d){sl.appendChild(h("option",{value:d,text:d}))});sl.appendChild(h("option",{disabled:true,text:"──────────"}));
   DEPT_REST.forEach(function(d){sl.appendChild(h("option",{value:d,text:d}))});if(cur&&DEPT_TOP.concat(DEPT_REST).indexOf(cur)>=0)sl.value=cur;return sl}
 function joinSheet(mode,code){if(!fbFs)return;mode=mode==="admin"?"admin":"editor";var m=$("jmodal");m.hidden=false;var pnl=$("jpanel");pnl.textContent="";
   var keepN=$("jName")?$("jName").value:myName,keepD=$("jDept")?$("jDept").value:myDept;
-  var nm=h("input",{type:"text",className:"inp",id:"jName",maxLength:40,placeholder:"Your name",autocomplete:"name"});nm.value=keepN||"";
+  var nm=h("input",{type:"text",className:"inp",id:"jName",maxLength:40,placeholder:"Full name (first name and surname)",autocomplete:"name",autocapitalize:"words"});nm.value=keepN||"";
   var dp=deptSelect(keepD),cd=null;
   if(mode==="admin"){cd=h("input",{type:"password",className:"inp",id:"jCode",maxLength:60,placeholder:"Admin code",autocomplete:"off",autocapitalize:"none"});cd.value=code||""}
   var msg=h("span",{className:"xmsg"}),go2=h("button",{type:"button",className:"btn primary big",text:mode==="admin"?"Join as admin":"Join"}),cl=h("button",{type:"button",className:"btn big",text:"Not now"});
   cl.onclick=function(){m.hidden=true};
-  go2.onclick=async function(){var n=nm.value.trim(),d=dp.value,c=cd?cd.value.trim():"";
-    if(!n){msg.textContent="Add your name.";nm.focus();return}if(!d){msg.textContent="Pick your department.";dp.focus();return}if(cd&&!c){msg.textContent="Enter the admin code.";cd.focus();return}
+  [nm,dp,cd].forEach(function(f){if(f)f.addEventListener(f.tagName==="SELECT"?"change":"input",function(){f.classList.remove("bad")})});
+  go2.onclick=async function(){var n=nm.value.trim().replace(/\s+/g," "),d=dp.value,c=cd?cd.value.trim():"",bad=[],why=[];
+    if(!fullName(n)){bad.push(nm);why.push(n?"your surname too":"your full name")}if(!d){bad.push(dp);why.push("your department")}if(cd&&!c){bad.push(cd);why.push("the admin code")}
+    if(bad.length){buzz(bad);msg.textContent="Add "+why.join(", ").replace(/, ([^,]*)$/," and $1")+".";bad[0].focus();return}nm.value=n;
     go2.disabled=true;msg.textContent="Joining…";var data={name:n,dept:d,role:mode,at:Date.now(),dev:devName()};if(cd)data.code=c;
     try{await fbFs.doc("members/"+fbUid).set(data);var was=myRole;myRole=mode;myName=n;myDept=d;
       try{localStorage.setItem("geroh-name",n);localStorage.setItem("geroh-dept",d)}catch(_){}
       m.hidden=true;setWrite(true);logAct(mode==="admin"?(was==="editor"?"became admin":"joined as admin"):"joined","","");
       showHint(ico("ok"),mode==="admin"?"You're in as admin":"You're in. Changes you make are shared with the team.",false);
       try{if(!localStorage.getItem(TKEY))setTimeout(function(){if(tourI<0)startTour()},900)}catch(_){}}
-    catch(e){msg.textContent=e&&e.code==="permission-denied"?(mode==="admin"?"That admin code isn't right.":"Couldn't join right now. Ask an admin to check the setup."):"Couldn't join. Try again when you have signal."}
+    catch(e){msg.textContent=e&&e.code==="permission-denied"?(mode==="admin"?"That admin code isn't right.":"Couldn't join right now. Ask an admin to check the setup."):"Couldn't join. Try again when you have signal.";if(e&&e.code==="permission-denied"&&cd){buzz([cd]);cd.select()}}
     go2.disabled=false};
   pnl.appendChild(h("h2",{text:mode==="admin"?"Join as admin":"Join to edit"}));
   pnl.appendChild(h("p",{text:mode==="admin"?"Admins can also unlock things and see the activity and visit logs.":"Anyone can view the plan. To add or change things, tell us who you are. You only do this once on this device."}));
