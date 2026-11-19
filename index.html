@@ -191,7 +191,7 @@ button:disabled{cursor:default}
 #deny small{display:block;margin-top:3px;font:500 12.5px/1.35 var(--ui);color:var(--ink)}#deny.fade{opacity:0;pointer-events:none}
 .zap{position:absolute;z-index:39;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(215,38,61,.28);box-shadow:0 0 0 2px #d7263d;pointer-events:none;animation:zap .55s ease-out 2}
 @keyframes zap{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.15);opacity:0}}
-.mebtn{position:relative}.mebtn.ping{isolation:isolate;z-index:7}
+#map .nope{filter:url(#noglow)}.mebtn{position:relative}.mebtn.ping{isolation:isolate;z-index:7}
 .mebtn.ping::after{content:"";position:absolute;left:50%;top:50%;width:calc(100% + 30px);aspect-ratio:1;border-radius:50%;background:rgba(215,38,61,.3);box-shadow:0 0 0 2px rgba(215,38,61,.55);pointer-events:none;z-index:-1;animation:ping .9s ease-in-out 5}
 @keyframes ping{0%,100%{opacity:0;transform:translate(-50%,-50%) scale(.55)}50%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
 @media (prefers-reduced-motion:reduce){.nope,.zap{animation:none}.mebtn.ping::after{animation:none;transform:translate(-50%,-50%)}}
@@ -329,6 +329,7 @@ textarea.inp{min-height:80px;resize:vertical;line-height:1.4}
 .rv-gps{flex:1;min-width:0;min-height:58px;border-radius:16px;background:#fff;display:flex;align-items:center;gap:10px;padding:6px 14px;font:600 15px var(--map);line-height:1.25;box-shadow:0 8px 20px -10px rgba(0,0,0,.4);box-sizing:border-box}
 .rv-gps i{width:13px;height:13px;border-radius:50%;background:#98a2b0;flex:none}
 .rv-gps.ok i{background:#1a9a4b}.rv-gps.warn i{background:#ffc300}.rv-gps.bad i{background:#d7263d}
+.rv-help{width:58px;height:58px;border-radius:16px;background:#fff;color:var(--ink);display:grid;place-items:center;flex:none;box-shadow:0 8px 20px -10px rgba(0,0,0,.4)}.rv-help svg{width:28px;height:28px}
 .rv-rec{width:58px;height:58px;border-radius:16px;background:#1b4fd8;color:#fff;display:grid;place-items:center;flex:none}
 .rv-rec svg{width:28px;height:28px}
 .rv-cross{position:absolute;width:40px;height:40px;pointer-events:none!important}
@@ -353,7 +354,7 @@ textarea.inp{min-height:80px;resize:vertical;line-height:1.4}
 #rvGrid .rv-btn{min-height:clamp(110px,17vh,170px);font-size:clamp(21px,5vmin,30px);padding:6px 6px 10px;gap:0}
 #rvGrid .rv-btn svg{flex:1 1 0;min-height:0;width:100%;height:100%;max-width:100%}
 @media (orientation:landscape) and (min-width:700px){#rvGrid{grid-template-columns:repeat(4,1fr)}.rv-grid.big{grid-template-columns:repeat(3,1fr)}.rv-grid.big .rv-btn:last-child:nth-child(odd){grid-column:span 2}}
-@media (max-height:500px){#rvGrid .rv-btn{min-height:76px;flex-direction:row;gap:8px;font-size:20px}#rvGrid .rv-btn svg{flex:none;width:52px;height:52px}.rv-exit,.rv-gps,.rv-rec{height:48px;min-height:48px}.rv-rec{width:48px}}
+@media (max-height:500px){#rvGrid .rv-btn{min-height:76px;flex-direction:row;gap:8px;font-size:20px}#rvGrid .rv-btn svg{flex:none;width:52px;height:52px}.rv-exit,.rv-gps,.rv-rec,.rv-help{height:48px;min-height:48px}.rv-rec,.rv-help{width:48px}}
 .rv-sheet{position:absolute;left:0;right:0;bottom:0;max-height:85%;overflow:auto;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -12px 40px -10px rgba(0,0,0,.45);
   padding:20px max(16px,env(safe-area-inset-right,0px)) max(18px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px;box-sizing:border-box}
 .rv-sheet h3{margin:0;font:700 22px var(--map)}
@@ -481,6 +482,9 @@ html,body{overscroll-behavior:none}
   .tk{width:56px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* laptops and desktops: you sit further from the screen, so the controls are drawn bigger */
+@media (hover:hover) and (pointer:fine) and (min-width:1100px) and (min-height:700px){#hud>*,#lpanel,#apanel,#jpanel,#xpanel{zoom:1.15}#hint,#deny{font-size:15px}#tourCard{zoom:1.1}}
+@media (hover:hover) and (pointer:fine) and (min-width:1700px) and (min-height:950px){#hud>*,#lpanel,#apanel,#jpanel,#xpanel{zoom:1.3}#tourCard{zoom:1.2}}
 </style>
 
 <div id="app">
@@ -488,6 +492,7 @@ html,body{overscroll-behavior:none}
     <defs>
       <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0H0V28" fill="none" stroke="var(--dot)" stroke-width="1"/></pattern>
       <filter id="sh" x="-60%" y="-60%" width="220%" height="220%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.4" flood-color="#111418" flood-opacity=".35"/></filter>
+      <filter id="noglow" x="-60%" y="-60%" width="220%" height="220%"><feMorphology in="SourceAlpha" operator="dilate" radius="5" result="d"/><feFlood flood-color="#d7263d" flood-opacity=".85"/><feComposite in2="d" operator="in" result="o"/><feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
       <filter id="selglow" x="-20%" y="-20%" width="140%" height="140%"><feMorphology in="SourceAlpha" operator="dilate" radius="2" result="d"/><feFlood flood-color="#ffc300"/><feComposite in2="d" operator="in" result="o"/><feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     </defs>
     <rect width="100%" height="100%" fill="url(#dots)"/>
@@ -1230,8 +1235,8 @@ svg.addEventListener("pointerdown",function(e){
   var tg=e.target,itEl=tg.closest&&tg.closest(".item"),wpEl=tg.closest&&tg.closest(".wp");
   gest={type:"pan",sx:e.clientX,sy:e.clientY,tx:view.tx,ty:view.ty,v0:{k:view.k,tx:view.tx,ty:view.ty},moved:false,target:tg,item:itEl?itEl.getAttribute("data-id"):null,wp:wpEl?wpEl.getAttribute("data-wp"):null,button:e.button};
   var cfg=null,liftEl=null,dn=null;
-  if(!armed&&!tool&&!riverOn&&fbFs){var ob=itEl?items.get(gest.item):wpEl?wps.get(gest.wp):null;if(ob)dn=whyNot(ob)}
-  if(dn){gest.dn=dn;if(e.pointerType==="touch"){var g1=gest;g1.holdT=setTimeout(function(){g1.holdT=0;if(gest!==g1||g1.moved)return;g1.dnArmed=true},420)}else gest.dnArmed=true;return}
+  if(!armed&&!tool&&!riverOn){var ob=itEl?items.get(gest.item):wpEl?wps.get(gest.wp):null;if(ob)dn=whyNot(ob)||(ob.locked?"locked":null)}
+  if(dn){gest.dn=dn;gest.dnEl=itEl||wpEl;if(e.pointerType==="touch"){var g1=gest;g1.holdT=setTimeout(function(){g1.holdT=0;if(gest!==g1||g1.moved)return;g1.dnArmed=true;deny(dn,g1.dnEl)},420)}else gest.dnArmed=true;return}
   if(wpEl&&canWrite&&!armed&&!tool&&!riverOn&&!isLocked("wp",wpEl.getAttribute("data-wp"))){var wo=wps.get(gest.wp),ww=toWorld(e.clientX,e.clientY);if(wo){cfg={type:"wpd",ox:wo.x-ww.x,oy:wo.y-ww.y,x0:wo.x,y0:wo.y};liftEl=wpEl}}
   if(itEl&&canWrite&&!armed&&!tool&&!riverOn&&!isLocked("item",itEl.getAttribute("data-id"))){var it2=items.get(gest.item),w=toWorld(e.clientX,e.clientY);if(it2){cfg={type:"item",ox:it2.x-w.x,oy:it2.y-w.y,x0:it2.x,y0:it2.y,side0:it2.side};liftEl=itEl}}
   /* fingers: press and hold to pick something up, so a swipe that starts on an icon still just moves the map */
@@ -1243,7 +1248,8 @@ svg.addEventListener("pointermove",function(e){
   if(gest.type==="pinch"){if(ptrs.size<2)return;var a=Array.from(ptrs.values()),d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y),r=svg.getBoundingClientRect();
     touched=true;view=zoomBy(gest.k*d/gest.d/view.k,(a[0].x+a[1].x)/2-r.left,(a[0].y+a[1].y)/2-r.top);apply();return}
   if(!gest.moved&&Math.hypot(e.clientX-gest.sx,e.clientY-gest.sy)<6)return;
-  if(!gest.moved&&gest.dnArmed){gest.moved=true;gest.type="none";deny(gest.dn,null,{x:gest.sx,y:gest.sy});return}
+  if(!gest.moved&&gest.dnArmed){gest.moved=true;gest.type="none";if(e.pointerType!=="touch")deny(gest.dn,gest.dnEl);return}
+  if(!gest.moved&&gest.dn&&Date.now()-swipeDenyT>4000){swipeDenyT=Date.now();deny(gest.dn,gest.dnEl)}
   if(gest.type==="none")return;
   if(!gest.moved&&gest.holdT){clearTimeout(gest.holdT);gest.holdT=0;if(!holdTold&&!gest.dn){holdTold=true;showHint(ico("drag"),"Press and hold an icon to move it",false)}}
   if(!gest.moved&&gest.type==="item"){gest.moved=true;drag=gest.item;select({kind:"item",id:gest.item})}
@@ -1255,7 +1261,7 @@ svg.addEventListener("pointermove",function(e){
   else if(gest.type==="wpd"){var wo=wps.get(gest.wp);if(!wo||!wo.el)return;var w2=toWorld(e.clientX,e.clientY);wo.x=w2.x+gest.ox;wo.y=w2.y+gest.oy;
     posEls.forEach(function(p){if(p.wp===wo){p.x=wo.x;p.y=wo.y}});wo.el.setAttribute("transform","translate("+wo.x+","+wo.y+") scale("+1/view.k+")")}
 });
-var holdTold=false;
+var holdTold=false,swipeDenyT=0;
 function endPtr(e,cancel){if(gest&&gest.holdT){clearTimeout(gest.holdT);gest.holdT=0}
   if(stroke&&e.pointerId===stroke.pid){if(cancel)cancelStroke();else finishStroke();return}
   if(!ptrs.has(e.pointerId))return;ptrs.delete(e.pointerId);var g=gest;if(!g)return;
@@ -1605,7 +1611,7 @@ function onPhotoPicked(e){var f=e.target.files&&e.target.files[0],cb=PH.cb;PH.cb
 function objOf(kind,id,create){return kind==="item"?items.get(id):kind==="wp"?wps.get(id):getPin({kind:"mark",id:id},create)}
 function saveObj(kind,id,o){if(kind==="item")putItem(o);else if(kind==="wp")putWp(o);else{savePin({kind:"mark",id:id});renderPins();renderCard()}}
 function isLocked(kind,id){var o=objOf(kind,id);return!!(o&&o.locked)}
-function lockedMsg(){if(riverOn)rvToast("Locked. Unlock it on the planning map first.",false);else setStatus("Locked: unlock it first","warn")}
+function lockedMsg(){if(riverOn)rvToast("Locked. Unlock it on the planning map first.",false);else deny("locked")}
 function unlockMsg(){deny("unlock",document.querySelector("#card .lockb"))}
 function toggleLock(kind,id){if(!canWrite)return;var o=objOf(kind,id,true);if(!o)return;var wy=kind==="mark"?whyNot():whyNot(o);if(wy){deny(wy,document.querySelector("#card .lockb"));return}var was=!!o.locked;if(was&&!isAdminMe()){unlockMsg();return}if(was)delete o.locked;else o.locked=true;saveObj(kind,id,o);
   pushUndo(function(){var o2=objOf(kind,id,true);if(!o2)return;if(!was&&!isAdminMe()){unlockMsg();return}if(was)o2.locked=true;else delete o2.locked;saveObj(kind,id,o2)});renderItems();renderPins();renderCard()}
@@ -1639,22 +1645,25 @@ function isAdminMe(){return myRole==="admin"||!fbFs}
    whyNot() with no argument asks about adding new things or shared notes. */
 function ownerUid(o){var c=o&&o.cr;return c&&c.uid||""}
 function whyNot(o){if(!fbFs)return null;if(!canWrite)return"view";if(o===undefined||myRole==="admin")return null;var u=ownerUid(o);return u&&u===fbUid?null:"own"}
-var DENY={view:["Log in to edit",""],own:["You can only edit what you put down","For full edit access, log in as an admin."],unlock:["Only admins can unlock this","For full edit access, log in as an admin."]};
+var DENY={view:["Log in to edit",""],own:["You can only edit what you put down","For full edit access, log in as an admin."],unlock:["Only admins can unlock this","For full edit access, log in as an admin."],locked:["This is locked","Only admins can unlock it."],lockedA:["This is locked","Unlock it from its card to move or remove it."]};
 var denyT=0,pingT=0,lastPt=null;
 function ro(el,why){if(why&&el){el.setAttribute("data-deny",why);el.classList.add("ro");if(el.tagName==="INPUT"||el.tagName==="TEXTAREA")el.readOnly=true}return el}
-function deny(why,el,pt){var d=DENY[why]||DENY.view;try{if(navigator.vibrate)navigator.vibrate([40,40,40])}catch(_){}
+function deny(why,el,pt){if(why==="locked"&&isAdminMe())why="lockedA";var d=DENY[why]||DENY.view;try{if(navigator.vibrate)navigator.vibrate([40,40,40])}catch(_){}
   if(riverOn){if(why==="view")joinSheet("editor");else rvToast(d[0]+". "+d[1],false);return}
   var app=$("app"),a=app.getBoundingClientRect(),r=null;
-  if(el&&el.getBoundingClientRect&&!(el instanceof SVGElement)){el.classList.remove("nope");void el.offsetWidth;el.classList.add("nope");setTimeout(function(){el.classList.remove("nope")},500);r=el.getBoundingClientRect()}
+  if(el&&el instanceof SVGElement){var se=el,n=0;clearInterval(se._nf);clearInterval(se._sh);if(se._t0!=null&&(se.getAttribute("transform")||"").indexOf(se._t0)===0)se.setAttribute("transform",se._t0);
+    var t0=se._t0=se.getAttribute("transform")||"",dx=[-4,7,-8,8,-8,7,-5,3,0],j=0;se._sh=setInterval(function(){var cur=se.getAttribute("transform")||"";if(cur.indexOf(t0)!==0){clearInterval(se._sh);return}se.setAttribute("transform",t0+(dx[j]?" translate("+dx[j]+",0)":""));if(++j>=dx.length){clearInterval(se._sh);se._t0=null}},45);
+    se.classList.add("nope");se._nf=setInterval(function(){n++;se.classList.toggle("nope",n%2===0);if(n>=5){clearInterval(se._nf);se.classList.remove("nope")}},160);var sr=se.getBoundingClientRect();pt={x:sr.left+sr.width/2,y:sr.top+sr.height/2};el=null}
+  if(el&&el.getBoundingClientRect){el.classList.remove("nope");void el.offsetWidth;el.classList.add("nope");setTimeout(function(){el.classList.remove("nope")},500);r=el.getBoundingClientRect()}
   else{pt=pt||lastPt;if(pt){var z=h("div",{className:"zap"});z.style.left=(pt.x-a.left)+"px";z.style.top=(pt.y-a.top)+"px";app.appendChild(z);setTimeout(function(){z.remove()},1200);r={left:pt.x-20,right:pt.x+20,top:pt.y-24,bottom:pt.y+24}}}
   if(!r){var c=$("card");r=!c.hidden?c.getBoundingClientRect():{left:a.left+a.width/2,right:a.left+a.width/2,top:a.top+a.height/2,bottom:a.top+a.height/2}}
   var t=$("deny");if(!t){t=h("div",{id:"deny",role:"alert"});app.appendChild(t)}
   t.textContent="";t.appendChild(document.createTextNode(d[0]));if(d[1])t.appendChild(h("small",{text:d[1]}));
-  t.onclick=function(){t.classList.add("fade");joinSheet(why==="view"?"editor":"admin")};
+  t.onclick=function(){t.classList.add("fade");if(why!=="lockedA")joinSheet(why==="view"?"editor":"admin")};
   t.classList.remove("fade");t.style.left="0px";t.style.top="0px";var tw=t.offsetWidth,th=t.offsetHeight,cx=(r.left+r.right)/2-a.left,y=r.top-a.top-th-10;
   if(y<8)y=r.bottom-a.top+10;t.style.left=Math.max(8,Math.min(a.width-tw-8,cx-tw/2))+"px";t.style.top=Math.max(8,Math.min(a.height-th-8,y))+"px";
   clearTimeout(denyT);denyT=setTimeout(function(){t.classList.add("fade")},3400);
-  var b=$("bMe");if(b&&!b.hidden){b.classList.remove("ping");void b.offsetWidth;b.classList.add("ping");clearTimeout(pingT);pingT=setTimeout(function(){b.classList.remove("ping")},4600)}}
+  var b=$("bMe");if(b&&!b.hidden&&why!=="lockedA"){b.classList.remove("ping");void b.offsetWidth;b.classList.add("ping");clearTimeout(pingT);pingT=setTimeout(function(){b.classList.remove("ping")},4600)}}
 /* anything marked data-deny explains itself instead of acting */
 document.addEventListener("pointerdown",function(e){lastPt={x:e.clientX,y:e.clientY};var g=e.target&&e.target.closest&&e.target.closest("[data-deny]");if(!g)return;e.preventDefault();e.stopPropagation();deny(g.getAttribute("data-deny"),g)},true);
 document.addEventListener("click",function(e){var g=e.target&&e.target.closest&&e.target.closest("[data-deny]");if(!g)return;e.preventDefault();e.stopPropagation();if(e.detail===0)deny(g.getAttribute("data-deny"),g)},true);
@@ -1666,6 +1675,7 @@ function rvEl(id){return document.getElementById(id)}
 function buildRiver(){var r=rvEl("river");r.innerHTML=
   '<div class="rv-top"><button type="button" class="rv-exit" id="rvExit">'+svgI(IC.close)+'<span>Exit</span></button>'+
   '<div class="rv-gps" id="rvGps" role="status"><i></i><span>Starting GPS…</span></div>'+
+  '<button type="button" class="rv-help" id="rvHelp" aria-label="River mode guide" title="River mode guide">'+svgI(IC.help)+'</button>'+
   '<button type="button" class="rv-rec" id="rvRec" hidden aria-label="Back to my position" title="Back to my position">'+svgI('<circle cx="12" cy="12" r="4" fill="currentColor"/><circle cx="12" cy="12" r="8.5" '+S+'/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" '+S+'/>')+'</button></div>'+
   '<div class="rv-cross" id="rvCross" hidden>'+svgI('<path d="M12 2v7M12 15v7M2 12h7M15 12h7" stroke="#111418" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="12" r="2" fill="#d7263d"/>')+'</div>'+
   '<div class="rv-toast" id="rvToast" hidden></div>'+
@@ -1673,14 +1683,14 @@ function buildRiver(){var r=rvEl("river");r.innerHTML=
   '<div class="rv-sheet" id="rvSheet" hidden></div>';
   var g=rvEl("rvGrid");RV_BTNS.forEach(function(bt){var b=h("button",{type:"button",className:"rv-btn "+bt[2],html:tokSvg(TYPE[bt[0]],null,48)+"<span></span>"});b.querySelector("span").textContent=bt[1];
     b.onclick=function(){if(bt[1]==="Hazard")pickTypes("What's the hazard?",HAZ_TYPES,"haz");else if(bt[1]==="External")pickTypes("External",EXT_TYPES,"");else if(bt[1]==="Waypoint")rvWaypoint();else rvPlace(bt[0])};g.appendChild(b)});
-  rvEl("rvExit").onclick=exitRiver;rvEl("rvRec").onclick=function(){following=true;rvEl("rvRec").hidden=true;rvEl("rvCross").hidden=true;if(gps)rvFollow(true)}}
+  rvEl("rvExit").onclick=exitRiver;rvEl("rvHelp").onclick=function(){rvEl("rvSheet").hidden=true;riverTour()};rvEl("rvRec").onclick=function(){following=true;rvEl("rvRec").hidden=true;rvEl("rvCross").hidden=true;if(gps)rvFollow(true)}}
 function rvFree(){var r=svg.getBoundingClientRect(),t=rvEl("river").querySelector(".rv-top").getBoundingClientRect(),g=rvEl("rvGrid").getBoundingClientRect();
   return{t:t.bottom-r.top+8,b:r.bottom-g.top+8,l:12,r:12,w:r.width,h:r.height}}
 function placeCross(){var f=rvFree(),c=rvEl("rvCross");c.style.left=(f.w/2-20)+"px";c.style.top=(f.t+(f.h-f.t-f.b)/2-20)+"px"}
 function rvCentreWorld(){var f=rvFree(),r=svg.getBoundingClientRect();return toWorld(r.left+f.w/2,r.top+f.t+(f.h-f.t-f.b)/2)}
 function enterRiver(){if(riverOn)return;riverOn=true;closePops();closeExport();select(null);setArmed(null);setTool(null);document.body.classList.add("rivermode");
   if(!rvEl("river").firstChild)buildRiver();rvEl("river").hidden=false;following=true;rvEl("rvRec").hidden=true;placeCross();
-  if(!myName){nameSheet(startGeo)}else startGeo()}
+  if(!myName){nameSheet(function(){startGeo();maybeRiverTour()})}else{startGeo();maybeRiverTour()}}
 function exitRiver(){riverOn=false;document.body.classList.remove("rivermode");rvEl("river").hidden=true;rvEl("rvSheet").hidden=true;
   if(geoWatch!=null&&navigator.geolocation){navigator.geolocation.clearWatch(geoWatch);geoWatch=null}
   renderMe();go(fitView())}
@@ -1766,7 +1776,7 @@ var TKEY="geroh-tour-done-v1",tourI=-1;
 function r3mark(){var L=LAYERS.filter(function(x){return x.id==="rapids"})[0];for(var i=0;i<L.pts.length;i++)if(L.pts[i].n==="Rapid 3")return "rapids:"+i;return null}
 var TOUR=[
  {ic:"spark",art:0,t:"Welcome to the Sungai Geroh race map",b:"This is your planning board for the river: nine sections from Rapid 0 to Hussein Bridge. This tour takes about two minutes and shows every part, ending with the PDF export. Use Next, or the arrow keys."},
- {ic:"help",el:".tl",art:null,t:"Status and tools",wide:true,gap:58,b:"The dot under the title shows whether your changes are saved. Around it are four tools:",list:[["layers","Layers","Switch groups of markers, the satellite photo and the old 2014 markers on or off.","#bLayers"],["help","Tutorial","Replay this tour any time, plus quick tips.","#bHelp"],["dl","Export","Make the PDF briefing with today’s conditions and your name as the reporter.","#bExport"],["clock","Latest briefing","Anyone can open the most recent briefing, see who made it and when, and download it.","#bLatest"]],enter:function(){go(fitView())}},
+ {ic:"help",el:".tl",art:null,t:"Status and tools",wide:true,gap:58,b:"The dot under the title shows whether your changes are saved. Around it are your tools:",list:[["layers","Layers","Switch groups of markers, the satellite photo and the old 2014 markers on or off.","#bLayers"],["help","Tutorial","Replay this tour any time, plus quick tips.","#bHelp"],["dl","Export","Make the PDF briefing with today’s conditions and your name as the reporter.","#bExport"],["clock","Latest briefing","Anyone can open the most recent briefing, see who made it and when, and download it.","#bLatest"],["pen","Log in","Everyone can look. Log in with your name and department to add things. You can change what you put down; admins can change everything.","#bMe"]],enter:function(){go(fitView())}},
  {ic:"river",el:".tc",art:2,t:"The river at a glance",b:"Each block is one section, sized to its real length. Tap a number to jump there. Tents mark Murni and Nomad camps, and small pips show the start, finish, hazards and safety along the run."},
  {ic:"detail",el:".vstack",art:4,t:"Three zoom levels",b:"River shows the whole run. Section shows rapids and exits. Detail shows every landmark. You can also pinch or scroll to zoom, and drag the map to move it.",enter:function(){select(null)}},
  {ic:"star",el:"#card",art:5,t:"Markers from your Google map",b:"Tap any marker to read its note, like this one at Rapid 3. You can give it a colour, attach icons such as a lifeguard or a hazard, and add your own notes.",enter:function(){var id=r3mark();if(id){select({kind:"mark",id:id});var m=markById(id);go(centreOn(m.x,m.y,Math.max(view.k,kfit*3.2)))}}},
@@ -1777,37 +1787,43 @@ var TOUR=[
  {ic:"pinI",el:"#dock",art:10,t:"Waypoints",b:"Drop a waypoint anywhere, name it and pick a colour. Then tap it and tap or drag icons onto it, like Rest, Water or a hazard. Drag a chip out of its card to take it off.",enter:function(){setTab("point")}},
  {ic:"pen",el:"#dock",art:11,t:"Draw on the map",b:"Apple Pencil or the mouse draws while your finger still moves the map. Choose pen, marker, arrow, text note or eraser in six colours. Tap ✕ or press Esc to stop drawing.",enter:function(){setTab("draw")}},
  {ic:"undo",el:".undo",art:12,t:"Undo",b:"Reverses your last change: a placed counter, a move, a drawing, an icon. Ctrl+Z works too.",enter:function(){setTool(null);setTab("race")}},
- {ic:"pinI",el:"#bRiver",art:99,t:"River mode",b:"For reporting from the water. Press River mode, type your name once, and allow location when your phone asks. The next few panes show how it works."},
- {ic:"pinI",art:100,wide:true,t:"River mode: the map follows you",b:"Your position is the blue dot; the circle shows GPS accuracy, and the top bar tells you the section and km. Drag the map and a crosshair appears: anything you add goes there instead. The blue button snaps back to following you."},
+ {ic:"pinI",el:"#bRiver",art:99,t:"River mode",b:"For reporting from the water, with GPS and big buttons. It has its own short guide that opens the first time you turn it on, and a ? button in River mode to see it again."},
+ {ic:"dl",el:"#bExport",art:13,t:"Export a briefing",b:"Makes a PDF for the briefing: the whole river first, then one page per section with everything placed and all team notes.",enter:function(){closeExport()}},
+ {ic:"dl",el:"#xpanel",art:14,t:"Set today's conditions",b:"Pick the river level, weather, number of hazards and flash flood risk. They print as big coloured boxes on page one. Then press Download PDF.",enter:function(){openExport()}},
+ {ic:"play",art:15,t:"You're ready",b:"Replay this tour any time from the ? button. Everything you add is shared with the whole team straight away.",enter:function(){closeExport();go(fitView())}}
+];
+var RKEY="geroh-river-tour-done-v1";
+var RTOUR=[
+ {ic:"pinI",art:100,wide:true,t:"River mode: the map follows you",b:"Allow location when your phone asks. Your position is the blue dot; the circle shows GPS accuracy, and the top bar tells you the section and km. Drag the map and a crosshair appears: anything you add goes there instead. The blue button snaps back to following you."},
  {ic:"hazard",art:101,wide:true,t:"River mode: report a hazard",b:"Press Hazard, then pick the type full-screen: strainer, debris, sharp rocks, wires or other. It drops at your position, and you can add a photo straight away or skip."},
  {ic:"pinI",art:102,wide:true,t:"River mode: external points",b:"External opens Ambulance, Lorry and Tube. One tap drops it where you are, with a big Undo banner for a few seconds in case you hit the wrong one."},
  {ic:"pinI",art:103,wide:true,t:"River mode: waypoints",b:"Waypoint drops a red pin where you are and opens a notes box. Type a note, add a photo if you like, and press Submit. Both are optional."},
  {ic:"pinI",art:104,wide:true,t:"River mode: stations and undo",b:"Station is one tap. Every press shows an Undo banner for 6 seconds, so a mis-tap is easy to take back."},
  {ic:"pinI",art:105,wide:true,t:"River mode: checking reports",b:"Tap anything on the map to see who added it, when, and its photo; tap the photo for full screen. Remove is there for mistakes. If several reports sit on one spot, you get a list to choose from."},
- {ic:"pinI",art:null,wide:true,t:"River mode: tips for the water",b:"A few things worth knowing before you launch:",rows:[["finger","Wake the screen first","Phones stop updating your location while the screen is locked. Tap the screen before you add a report."],["river","Saving and signal","SYNCNOTE"],["close","Leaving river mode","Press Exit, top left, to go back to the planning map."]]},
- {ic:"dl",el:"#bExport",art:13,t:"Export a briefing",b:"Makes a PDF for the briefing: the whole river first, then one page per section with everything placed and all team notes.",enter:function(){closeExport()}},
- {ic:"dl",el:"#xpanel",art:14,t:"Set today's conditions",b:"Pick the river level, weather, number of hazards and flash flood risk. They print as big coloured boxes on page one. Then press Download PDF.",enter:function(){openExport()}},
- {ic:"play",art:15,t:"You're ready",b:"Replay this tour any time from the ? button. On the shared Claude link your changes reach the whole team; on the website they stay on your device.",enter:function(){closeExport();go(fitView())}}
+ {ic:"pinI",art:null,wide:true,t:"River mode: tips for the water",b:"A few things worth knowing before you launch:",rows:[["finger","Wake the screen first","Phones stop updating your location while the screen is locked. Tap the screen before you add a report."],["river","Saving and signal","SYNCNOTE"],["help","See this again","Press the ? button at the top to replay this guide."],["close","Leaving river mode","Press Exit, top left, to go back to the planning map."]]}
 ];
 var tourTimer=0;
-function tourPoint(st,k){var rows=document.querySelectorAll("#tourCard .trow");rows.forEach(function(r,j){r.classList.toggle("on",j===k)});var t=document.querySelector(st.list[k][3]),ar=$("tourArrow");if(!t)return;
-  var q=t.getBoundingClientRect();ar.querySelector("span").textContent=st.list[k][1];ar.hidden=false;ar.style.left=Math.round(q.left+q.width/2)+"px";ar.style.top=Math.round(q.bottom+4)+"px"}
-function startTour(){closeExport();closePops();setArmed(null);setTool(null);tourI=-1;$("tour").hidden=false;tourGo(0)}
-function endTour(){clearInterval(tourTimer);$("tourArrow").hidden=true;$("tour").hidden=true;tourI=-1;try{localStorage.setItem(TKEY,"1")}catch(_){}closePops();closeExport();select(null);setTab("race");go(fitView())}
-function tourGo(i){if(i<0)return;if(i>=TOUR.length){endTour();return}tourI=i;var st=TOUR[i];if(st.enter)st.enter();
+function tourPoint(st,k){var rows=document.querySelectorAll("#tourCard .trow");rows.forEach(function(r,j){r.classList.toggle("on",j===k)});var L=st._l||st.list,t=document.querySelector(L[k][3]),ar=$("tourArrow");if(!t)return;
+  var q=t.getBoundingClientRect();ar.querySelector("span").textContent=L[k][1];ar.hidden=false;ar.style.left=Math.round(q.left+q.width/2)+"px";ar.style.top=Math.round(q.bottom+4)+"px"}
+var tourList=TOUR,tourKind="main";
+function startTour(list,kind){tourList=list||TOUR;tourKind=kind||"main";if(tourKind==="main"){closeExport();closePops()}setArmed(null);setTool(null);tourI=-1;$("tour").hidden=false;tourGo(0)}
+function riverTour(){if(tourI<0)startTour(RTOUR,"river")}
+function maybeRiverTour(){try{if(localStorage.getItem(RKEY))return}catch(_){return}setTimeout(function(){if(riverOn&&tourI<0&&rvEl("rvSheet").hidden)riverTour()},700)}
+function endTour(){clearInterval(tourTimer);$("tourArrow").hidden=true;$("tour").hidden=true;tourI=-1;if(tourKind==="river"){try{localStorage.setItem(RKEY,"1")}catch(_){}tourKind="main";tourList=TOUR;return}try{localStorage.setItem(TKEY,"1")}catch(_){}closePops();closeExport();select(null);setTab("race");go(fitView())}
+function tourGo(i){if(i<0)return;if(i>=tourList.length){endTour();return}tourI=i;var st=tourList[i];if(st.enter)st.enter();
   clearInterval(tourTimer);$("tourArrow").hidden=true;var c=$("tourCard");c.textContent="";c.classList.toggle("wide",!!st.wide);var art=h("div",{className:"art",html:st.art!=null?tourArt(st.art):""});if(st.art!=null)c.appendChild(art);
   try{var asv=art.querySelector("svg");if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches&&asv.pauseAnimations){asv.setCurrentTime(2.6);asv.pauseAnimations()}}catch(_){}c.appendChild(h("h3",{id:"tourT",text:st.t}));c.appendChild(h("p",{text:st.b}));
   if(st.rows){var ul2=h("div",{className:"tlist"});st.rows.forEach(function(r){var txt2=r[2]==="SYNCNOTE"?(fbFs?"Reports reach everyone within a second or two, and wait on the phone through stretches with no signal.":"Right now reports are saved on this phone. Once the team’s shared plan is switched on, they’ll reach everyone automatically."):r[2];
       ul2.appendChild(h("div",{className:"trow",html:ico(r[0])},[h("div",{},[h("b",{text:r[1]}),h("span",{text:txt2})])]))});c.appendChild(ul2)}
-  if(st.list){var ul=h("div",{className:"tlist"});st.list.forEach(function(r){ul.appendChild(h("div",{className:"trow",html:ico(r[0])},[h("div",{},[h("b",{text:r[1]}),h("span",{text:r[2]})])]))});c.appendChild(ul);
-    var k=0;setTimeout(function(){if(TOUR[tourI]===st)tourPoint(st,0)},420);tourTimer=setInterval(function(){k=(k+1)%st.list.length;tourPoint(st,k)},1900)}
-  var dots=h("div",{className:"tdots","aria-label":"Step "+(i+1)+" of "+TOUR.length});TOUR.forEach(function(_,j){dots.appendChild(h("i",{className:j===i?"on":""}))});
+  if(st.list){st._l=st.list.filter(function(r){var e=document.querySelector(r[3]);return e&&!e.hidden&&e.getClientRects().length});var ul=h("div",{className:"tlist"});st._l.forEach(function(r){ul.appendChild(h("div",{className:"trow",html:ico(r[0])},[h("div",{},[h("b",{text:r[1]}),h("span",{text:r[2]})])]))});c.appendChild(ul);
+    var k=0;setTimeout(function(){if(tourList[tourI]===st)tourPoint(st,0)},420);tourTimer=setInterval(function(){k=(k+1)%st._l.length;tourPoint(st,k)},1900)}
+  var dots=h("div",{className:"tdots","aria-label":"Step "+(i+1)+" of "+tourList.length});tourList.forEach(function(_,j){dots.appendChild(h("i",{className:j===i?"on":""}))});
   var nav=h("div",{className:"tnav"},[dots]);if(i>0){var bk=h("button",{type:"button",className:"btn",text:"Back"});bk.onclick=function(){tourGo(i-1)};nav.appendChild(bk)}
-  else{var sk=h("button",{type:"button",className:"tskip",text:"Skip tour"});sk.onclick=endTour;nav.appendChild(sk)}
-  var nx=h("button",{type:"button",className:"btn primary",text:i===TOUR.length-1?"Start planning":"Next"});nx.onclick=function(){tourGo(i+1)};nav.appendChild(nx);c.appendChild(nav);
-  if(i>0&&i<TOUR.length-1){var x=h("button",{type:"button",className:"tskip",text:"End tour",style:"align-self:flex-start;margin:-6px 0 -8px -4px"});x.onclick=endTour;c.appendChild(x)}
+  else{var sk=h("button",{type:"button",className:"tskip",text:tourKind==="river"?"Skip":"Skip tour"});sk.onclick=endTour;nav.appendChild(sk)}
+  var nx=h("button",{type:"button",className:"btn primary",text:i===tourList.length-1?(tourKind==="river"?"Got it":"Start planning"):"Next"});nx.onclick=function(){tourGo(i+1)};nav.appendChild(nx);c.appendChild(nav);
+  if(i>0&&i<tourList.length-1){var x=h("button",{type:"button",className:"tskip",text:"End tour",style:"align-self:flex-start;margin:-6px 0 -8px -4px"});x.onclick=endTour;c.appendChild(x)}
   setTimeout(placeTour,40);setTimeout(placeTour,360);setTimeout(function(){nx.focus()},60)}
-function placeTour(){if(tourI<0)return;var st=TOUR[tourI],sp=$("tourSpot"),c=$("tourCard"),vw=window.innerWidth,vh=window.innerHeight,cw=c.offsetWidth,ch=c.offsetHeight,pad=6,el=st.el&&document.querySelector(st.el),r=el&&el.getClientRects().length?el.getBoundingClientRect():null;
+function placeTour(){if(tourI<0)return;var st=tourList[tourI],sp=$("tourSpot"),c=$("tourCard"),vw=window.innerWidth,vh=window.innerHeight,cw=c.offsetWidth,ch=c.offsetHeight,pad=6,el=st.el&&document.querySelector(st.el),r=el&&el.getClientRects().length?el.getBoundingClientRect():null;
   if(!r){sp.className="none";c.style.left=Math.round((vw-cw)/2)+"px";c.style.top=Math.round((vh-ch)/2)+"px";return}
   sp.className="";sp.style.left=(r.left-pad)+"px";sp.style.top=(r.top-pad)+"px";sp.style.width=(r.width+pad*2)+"px";sp.style.height=(r.height+pad*2)+"px";
   var g=14,x,y;
