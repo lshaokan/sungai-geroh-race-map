@@ -34,7 +34,7 @@ button:disabled{cursor:default}
 #app{position:relative;height:100%;overflow:hidden}
 #map{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:grab}
 #map.tool{cursor:crosshair}
-#map.armed{cursor:copy}
+#map.armed{cursor:copy}@media (hover:hover){#map.armed{cursor:none}}
 
 /* HUD */
 #hud{position:absolute;inset:0;pointer-events:none;display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr) auto;gap:12px;
@@ -1055,30 +1055,36 @@ function renderTray(){var tr=$("tray");tr.textContent="";
       b.querySelector("span").textContent=o.n;b.onclick=function(){inkSize=ix;try{localStorage.setItem("geroh-ink-size",String(ix))}catch(_){}if(!tool||tool==="erase"||tool==="text")setTool("pen");renderTray()};ro(b,whyNot());sz.appendChild(b)});
     tr.appendChild(sz);return}
   TYPES.filter(function(t){return t.fam===tab}).forEach(function(t){
-    var b=h("button",{type:"button",className:"tk",id:"tk-"+t.id,"aria-pressed":String(armed===t.id),title:t.name+": drag onto the map, or tap then tap the map",
+    var b=h("button",{type:"button",className:"tk",id:"tk-"+t.id,"aria-pressed":String(armed===t.id),title:t.name+": click, then click the map. Or drag it there.",
       html:tokSvg(t,null,36)+"<span></span><b hidden></b>"});b.querySelector("span").textContent=t.short;
     b.addEventListener("pointerdown",function(e){trayDown(e,t,b)});ro(b,whyNot());tr.appendChild(b)});
   updCounts()}
 function updCounts(){var c={};items.forEach(function(it){c[it.type]=(c[it.type]||0)+1});
   TYPES.forEach(function(t){var b=$("tk-"+t.id);if(!b)return;var bd=b.querySelector("b");bd.hidden=!c[t.id];bd.textContent=c[t.id]||""})}
+/* tapping a dock icon picks up one icon: it follows the mouse, drops where you click, then puts itself down */
 function setArmed(id){armed=id;svg.classList.toggle("armed",!!id);document.querySelectorAll(".tk").forEach(function(b){b.setAttribute("aria-pressed",String(b.id==="tk-"+id))});
-  if(id)showHint(tokSvg(TYPE[id],null,22),TYPE[id].id==="waypoint"?"Tap the map to drop waypoints":"Tap the map to place, or tap a marker to attach",true);else hideHint()}
+  if(!id){var gh=$("ghost");if(gh.dataset.arm){gh.hidden=true;delete gh.dataset.arm}}
+  var mouse=window.matchMedia&&matchMedia("(hover:hover)").matches,v=mouse?"Click":"Tap";
+  if(id)showHint(tokSvg(TYPE[id],null,22),v+" the map to place it"+(isPinType(id)?"":", or "+v.toLowerCase()+" a marker to attach it")+(mouse?" · Esc to cancel":""),true);else hideHint()}
+function armGhost(e){var gh=$("ghost");if(!armed||e.pointerType==="touch"||riverOn||e.buttons){if(gh.dataset.arm){gh.hidden=true;delete gh.dataset.arm}return}
+  if(gh.dataset.arm!==armed){gh.innerHTML=tokSvg(TYPE[armed],null,44);gh.dataset.arm=armed}gh.hidden=false;gh.style.left=e.clientX+"px";gh.style.top=e.clientY+"px"}
 function setTool(t){if(t&&whyNot())t=null;tool=t;svg.classList.toggle("tool",!!t);if(t){setArmed(null);var m={pen:"draws",hl:"highlights",arrow:"drags an arrow",text:"taps to add a note",erase:"wipes drawings"}[t];
   showHint(svgI(IC[t]),(penSeen?"Pencil ":"Pencil or mouse ")+m+" · finger moves the map",true)}else hideHint()}
 var hintT=0;
 function showHint(icon,text,sticky){var hn=$("hint");hn.innerHTML=icon+"<span></span>";hn.querySelector("span").textContent=text;
   var x=h("button",{type:"button",className:"x","aria-label":"Stop",title:"Stop (Esc)",html:ico("close")});x.onclick=function(){setArmed(null);setTool(null);if(tab==="draw")renderTray()};hn.appendChild(x);
   function place(){var d=$("dock").getBoundingClientRect(),a=$("app").getBoundingClientRect();hn.style.top=Math.max(8,d.top-a.top-hn.offsetHeight-10)+"px"}
-  place();requestAnimationFrame(place);hn.classList.remove("fade");clearTimeout(hintT)}
+  place();requestAnimationFrame(place);hn.classList.remove("fade");clearTimeout(hintT);if(!sticky)hintT=setTimeout(hideHint,3500)}
 function hideHint(){$("hint").classList.add("fade")}
 function trayDown(e,t,b){if(!canWrite)return;var sx=e.clientX,sy=e.clientY,gh=$("ghost"),moving=false;try{b.setPointerCapture(e.pointerId)}catch(_){}
-  function mv(ev){if(!moving&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>8){moving=true;gh.innerHTML=tokSvg(t,null,44);gh.hidden=false}
+  function mv(ev){if(!moving&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>8){moving=true;if(armed)setArmed(null);gh.innerHTML=tokSvg(t,null,44);gh.hidden=false}
     if(moving){gh.style.left=ev.clientX+"px";gh.style.top=ev.clientY+"px";clearDrop();if(isPinType(t.id))return;var d=dropTargetAt(ev.clientX,ev.clientY);
       if(d&&d.card&&d.tg)card.classList.add("drop");else if(d&&d.el)d.el.classList.add("drop")}}
   function done(ev,cancel){b.removeEventListener("pointermove",mv);b.removeEventListener("pointerup",up);b.removeEventListener("pointercancel",cn);gh.hidden=true;clearDrop();if(cancel)return;
     if(moving){var d=dropTargetAt(ev.clientX,ev.clientY);if(!d)return;
       if(!isPinType(t.id)&&d.tg)attach(d.tg,t.id);else if(d.map||d.el)placeAt(t.id,toWorld(ev.clientX,ev.clientY))}
     else if(isPinSel()&&!isPinType(t.id)){attach(sel,t.id)}
+    else if(ev.pointerType!=="mouse"){showHint(tokSvg(t,null,22),"Drag "+(t.id==="tube"?"the tube":"it")+" onto the map",false)}
     else{setTool(null);setArmed(armed===t.id?null:t.id)}}
   function up(ev){done(ev,false)}function cn(ev){done(ev,true)}
   b.addEventListener("pointermove",mv);b.addEventListener("pointerup",up);b.addEventListener("pointercancel",cn)}
@@ -1274,7 +1280,7 @@ function endPtr(e,cancel){if(gest&&gest.holdT){clearTimeout(gest.holdT);gest.hol
       var pw={x:g.x0,y:g.y0};pushUndo(function(){wo.x=pw.x;wo.y=pw.y;putWp(wo)})}return}
   if(cancel||g.moved)return;
   var tg=g.target,c;
-  if(armed&&canWrite){var pe=tg.closest&&(tg.closest(".wp")||tg.closest(".mark"));if(pe&&!isPinType(armed))attach(pinTarget(pe),armed);else placeAt(armed,toWorld(e.clientX,e.clientY));return}
+  if(armed&&canWrite){var at=armed,pe=tg.closest&&(tg.closest(".wp")||tg.closest(".mark"));setArmed(null);if(pe&&!isPinType(at))attach(pinTarget(pe),at);else placeAt(at,toWorld(e.clientX,e.clientY));return}
   if(tg.closest){
     if(c=tg.closest(".cluster")){var ids=(c.getAttribute("data-ids")||"").split(",").filter(function(x){return items.has(x)}),sp=0;
       ids.forEach(function(a2){ids.forEach(function(b2){sp=Math.max(sp,Math.hypot(items.get(a2).x-items.get(b2).x,items.get(a2).y-items.get(b2).y))})});
@@ -1293,6 +1299,7 @@ function endPtr(e,cancel){if(gest&&gest.holdT){clearTimeout(gest.holdT);gest.hol
   }
   hideTip();select(null)}
 svg.addEventListener("pointerup",function(e){endPtr(e,false)});
+svg.addEventListener("pointermove",armGhost);svg.addEventListener("pointerleave",function(){var gh=$("ghost");if(gh.dataset.arm){gh.hidden=true;delete gh.dataset.arm}});
 /* A palm resting on the screen must not hijack the Pencil: drop the palm's pan/pinch and put the map back */
 function abortGesture(){var g=gest;if(g){if(g.type==="item"&&g.moved){var it=items.get(g.item);if(it){it.x=g.x0;it.y=g.y0}drag=null;renderItems()}
   if(g.type==="wpd"&&g.moved){var wo=wps.get(g.wp);if(wo){wo.x=g.x0;wo.y=g.y0}dragWp=null;renderWps()}
