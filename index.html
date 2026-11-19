@@ -288,6 +288,17 @@ textarea.inp{min-height:80px;resize:vertical;line-height:1.4}
 .chip span{pointer-events:none;padding-right:2px}
 .chip .x{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
 .chip .x svg{width:14px;height:14px}
+/* comments */
+.cmbox{margin-top:12px;border-top:1px solid #eef1f6;padding-top:10px}
+.cmlist{display:flex;flex-direction:column;gap:7px;max-height:240px;overflow:auto;margin:6px 0 8px;overscroll-behavior:contain}
+.cm{position:relative;background:#f4f1fa;border-radius:10px;padding:7px 10px;font-size:13.5px;line-height:1.35}
+.cm.mine{background:#ece6f8}
+.cm .cmt{display:flex;flex-wrap:wrap;gap:0 6px;align-items:baseline;font-size:12px;color:var(--muted);padding-right:24px}.cm .cmt b{color:var(--ink);font-weight:650}
+.cm p{margin:2px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.cm .cmx{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}.cm .cmx:hover{background:#fff;color:#d7263d}.cm .cmx svg{width:14px;height:14px}
+.cmrow{display:flex;gap:8px;align-items:flex-end}textarea.inp.cmin{flex:1;min-width:0;min-height:42px;max-height:120px;resize:none;margin:0;padding-top:10px;padding-bottom:10px}.cmgo{flex:none;height:42px}
+.cmnone{font-size:12.5px;color:var(--muted);margin:2px 0 8px}
+@media (pointer:coarse){.cm .cmx{width:34px;height:34px;top:0;right:0}}
 @media (hover:hover){.chip .x:hover{background:#fff;color:var(--ink)}}
 .dropzone{border:2px dashed var(--line);border-radius:12px;padding:9px 10px;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;line-height:1.3}
 .dropzone svg{width:22px;height:22px;flex:none}
@@ -883,7 +894,7 @@ function renderItems(){
 }
 function drawItem(it){var t=TYPE[it.type],isSel=sel&&sel.kind==="item"&&sel.id===it.id;
   var g=el("g",{class:"item fam-"+t.fam+(isSel?" sel":""),"data-id":it.id},gItems);
-  g.innerHTML='<circle class="ring" r="20" fill="rgba(255,195,0,.4)" stroke="#111418" stroke-width="2.4"/><circle r="18" fill="transparent"/><g filter="url(#sh)">'+token(t,it.color)+'</g>'+(it.photo?camBadge(12,-12):"")+(it.locked?lockBadge(-12,12):"")+(it.tm&&TIMED[it.type]?tmPill(it.tm,0,-31):"");
+  g.innerHTML='<circle class="ring" r="20" fill="rgba(255,195,0,.4)" stroke="#111418" stroke-width="2.4"/><circle r="18" fill="transparent"/><g filter="url(#sh)">'+token(t,it.color)+'</g>'+(it.photo?camBadge(12,-12):"")+(it.locked?lockBadge(-12,12):"")+(it.tm&&TIMED[it.type]?tmPill(it.tm,0,-31):"")+(cmN("item:"+it.id)?cmBadge(cmN("item:"+it.id),-13,-12):"");
   var txt=it.label||(t.id==="start"||t.id==="finish"?t.name:"");
   if(txt){var always=isSel||t.id==="flag"||t.id==="start"||t.id==="finish";var lg=el("g",{class:always?"":"l2"},g);
     label(lg,String(txt).slice(0,40),0,30,"middle","big",isSel?300:always?95:70)}
@@ -920,15 +931,15 @@ function badges(icons,y){var order=[],cnt={};icons.forEach(function(t){if(!TYPE[
 function wpBody(o){var b={name:o.name||"",color:o.color||"#d7263d",notes:o.notes||"",icons:o.icons.slice(),x:o.x,y:o.y};if(o.rep)b.rep=o.rep;if(o.photo)b.photo=o.photo;if(o.locked)b.locked=true;if(o.cr)b.cr=o.cr;if(o.tm)b.tm=o.tm;if(o.st)b.st=o.st;return b}
 function renderWps(){var gw=$("gWp");gw.textContent="";posEls=posEls.filter(function(p){return p.kind!=="wp"});
   wps.forEach(function(o,id){var isSel=sel&&sel.kind==="wp"&&sel.id===id,g=el("g",{class:"wp"+(o.st==="dot"?" dot":"")+(isSel?" sel":""),"data-wp":id},gw);
-    if(o.st==="dot"){g.innerHTML='<circle class="ring" r="15" fill="rgba(255,195,0,.4)" stroke="#111418" stroke-width="2"/><circle r="13" fill="transparent"/><circle r="4.5" fill="#fff" stroke="#5b6573" stroke-width="1.8"/>'+badges(o.icons,-22)+(o.photo?camBadge(9,-9):"")+(o.locked?lockBadge(-9,9):"");
+    if(o.st==="dot"){g.innerHTML='<circle class="ring" r="15" fill="rgba(255,195,0,.4)" stroke="#111418" stroke-width="2"/><circle r="13" fill="transparent"/><circle r="4.5" fill="#fff" stroke="#5b6573" stroke-width="1.8"/>'+badges(o.icons,-22)+(o.photo?camBadge(9,-9):"")+(o.locked?lockBadge(-9,9):"")+(cmN("wp:"+id)?cmBadge(cmN("wp:"+id),-11,-10):"");
       label(g,o.name||"Landmark",8,4,"start","m",isSel?300:20);o.el=g;posEls.push({el:g,x:o.x,y:o.y,wp:o,kind:"wp"});g.setAttribute("transform","translate("+o.x+","+o.y+") scale("+1/view.k+")");return}
     g.innerHTML='<circle class="ring" cy="-18" r="18" fill="rgba(255,195,0,.4)" stroke="#111418" stroke-width="2.4"/><circle cy="-16" r="17" fill="transparent"/>'+
-      '<g filter="url(#sh)"><path d="M0 0C-3-6-11.5-11-11.5-18.5A11.5 11.5 0 1 1 11.5-18.5C11.5-11 3-6 0 0Z" fill="'+o.color+'" stroke="#fff" stroke-width="2"/></g><circle cy="-18.5" r="4.2" fill="#fff"/>'+badges(o.icons,-41)+(o.photo?camBadge(10,-28):"")+(o.locked?lockBadge(-10,-8):"")+(o.tm?tmPill(o.tm,30,-18):"");
+      '<g filter="url(#sh)"><path d="M0 0C-3-6-11.5-11-11.5-18.5A11.5 11.5 0 1 1 11.5-18.5C11.5-11 3-6 0 0Z" fill="'+o.color+'" stroke="#fff" stroke-width="2"/></g><circle cy="-18.5" r="4.2" fill="#fff"/>'+badges(o.icons,-41)+(o.photo?camBadge(10,-28):"")+(o.locked?lockBadge(-10,-8):"")+(o.tm?tmPill(o.tm,30,-18):"")+(cmN("wp:"+id)?cmBadge(cmN("wp:"+id),-13,-29):"");
     if(o.name)label(g,o.name,0,14,"middle","big",isSel?300:90);o.el=g;posEls.push({el:g,x:o.x,y:o.y,wp:o,kind:"wp"});
     g.setAttribute("transform","translate("+o.x+","+o.y+") scale("+1/view.k+")")});schedDeclutter()}
 function renderMarkDecor(){LAYERS.forEach(function(L){L.pts.forEach(function(m){var o=mo[L.id+":"+m.ix];
   m.bg.innerHTML=o&&o.color?'<circle r="13.5" fill="'+o.color+'" fill-opacity=".22" stroke="'+o.color+'" stroke-width="2.6"/>':"";
-  m.fg.innerHTML=(o&&o.icons.length?badges(o.icons,-25):"")+(o&&o.photo?camBadge(10,-10):"")+(o&&o.locked?lockBadge(-10,10):"")})})}
+  var ck="mark:"+L.id+":"+m.ix;m.fg.innerHTML=(o&&o.icons.length?badges(o.icons,-25):"")+(o&&o.photo?camBadge(10,-10):"")+(o&&o.locked?lockBadge(-10,10):"")+(cmN(ck)?cmBadge(cmN(ck),-13,-12,1.25):"")})})}
 function renderPins(){renderWps();renderMarkDecor();renderPips()}
 function pinTarget(e){return e.classList.contains("wp")?{kind:"wp",id:e.getAttribute("data-wp")}:{kind:"mark",id:e.getAttribute("data-mark")}}
 function isPinSel(){return sel&&(sel.kind==="wp"||sel.kind==="mark")}
@@ -1149,7 +1160,9 @@ function chipDown(e,tg,type,chip){if(e.target.closest(".x")||!canWrite)return;va
     detach(tg,type);if(d&&d.map&&TYPE[type].fam!=="point")placeItem(type,toWorld(ev.clientX,ev.clientY))}
   function up(ev){done(ev,false)}function cn(ev){done(ev,true)}
   chip.addEventListener("pointermove",mv);chip.addEventListener("pointerup",up);chip.addEventListener("pointercancel",cn)}
-function renderCard(){
+/* keep a half-typed comment (and the cursor) when the card redraws because someone else changed something */
+function renderCard(){var cf0=document.activeElement&&document.activeElement.id==="cmIn";renderCard0();if(!$("cmBox"))cmStop();else if(cf0){var ci=$("cmIn");if(ci){ci.focus();try{ci.setSelectionRange(ci.value.length,ci.value.length)}catch(_){}}}}
+function renderCard0(){
   card.textContent="";card.classList.toggle("mini",!!cardMini);if(!sel){card.hidden=true;return}card.hidden=false;
   if(sel.kind==="sec"){var s=byId(sel.id),inS={},rap=0,ext=0;
     items.forEach(function(it){if(secAt(it.x,it.y)===s&&onRiver(it.x,it.y).d<60)inS[it.type]=(inS[it.type]||0)+1});
@@ -1188,6 +1201,7 @@ function renderCard(){
       b.onclick=function(){it.color=c;putItem(it)};sw.appendChild(b)});card.appendChild(sw)}
     card.appendChild(h("div",{className:"actions"},[ro(btn("copy","Duplicate",function(){var n={id:newId(),type:it.type,x:r1(it.x+18/view.k),y:r1(it.y+18/view.k),side:"",label:it.label,color:it.color,cr:mkCr()};if(it.tm)n.tm=it.tm;putItem(n);pushUndo(function(){delItem(n.id,true)});select({kind:"item",id:n.id})}),whyNot()),
       it.locked?h("span",{className:"lockedtxt",html:ico("lock")+"<span>Locked: unlock to move or remove</span>"}):ro(btn("trash","Remove",function(){delItem(it.id)},"danger"),wy)]));
+    var cb=cmBlock("item:"+it.id,thingName("items",it.id,it),it.x,it.y);if(cb)card.appendChild(cb);
     var cf=crFoot(it);if(cf)card.appendChild(cf);return}
   if(sel.kind==="wp"){var o=wps.get(sel.id);if(!o){sel=null;card.hidden=true;return}var ww=where(o.x,o.y),tgw={kind:"wp",id:sel.id},wyw=whyNot(o);
     var ni=h("input",{type:"text",className:"namein",id:"wp-name",value:o.name,maxLength:40,placeholder:"Name this waypoint","aria-label":"Waypoint name"});ro(ni,wyw);
@@ -1201,7 +1215,7 @@ function renderCard(){
     if(!dot)tmEditor(o,putWp).forEach(function(n){card.appendChild(n)});
     pinEditor(tgw,o,false).forEach(function(n){card.appendChild(n)});
     var acts=[btn("target","Zoom here",function(){go(centreOn(o.x,o.y,Math.max(view.k,kfit*6)))},"primary")];acts.push(o.locked?h("span",{className:"lockedtxt",html:ico("lock")+"<span>Locked</span>"}):ro(btn("trash","Delete",function(){delWp(o.id)},"danger"),wyw));
-    card.appendChild(h("div",{className:"actions"},acts));var cfw=crFoot(o);if(cfw)card.appendChild(cfw);return}
+    card.appendChild(h("div",{className:"actions"},acts));var cbw=cmBlock("wp:"+o.id,thingName("waypoints",o.id,o),o.x,o.y);if(cbw)card.appendChild(cbw);var cfw=crFoot(o);if(cfw)card.appendChild(cfw);return}
   if(sel.kind==="mark"){var m=markById(sel.id),L=LAYERS.filter(function(x){return x.id===m.layer})[0],wm=where(m.x,m.y),tgm={kind:"mark",id:sel.id};
     card.appendChild(h("div",{className:"chead"},[h("span",{className:"big",html:'<svg viewBox="-16 -16 32 32" width="36" height="36">'+markGlyph(m)+'</svg>'}),h("h3",{text:m.base?m.base:m.place?m.n+" · "+m.place:m.n}),lockBtn("mark",sel.id),closeBtn()]));
     card.appendChild(h("div",{className:"sub",text:(m.base?"Base camp":KIND[m.k])+" · "+(wm.r.d<40?wm.txt:L.name)}));
@@ -1210,6 +1224,7 @@ function renderCard(){
     pinEditor(tgm,mo[sel.id],true).forEach(function(n){card.appendChild(n)});
     if(m.note){card.appendChild(h("div",{className:"lbl-s",text:"From your Google map"}));card.appendChild(h("div",{className:"quote",text:m.note}))}
     card.appendChild(h("div",{className:"actions"},[btn("target","Zoom here",function(){go(centreOn(m.x,m.y,Math.max(view.k,kfit*6)))},"primary")]));
+    var cbm=cmBlock("mark:"+sel.id,m.base||m.n,m.x,m.y);if(cbm)card.appendChild(cbm);
     card.appendChild(hideActs("m:"+sel.id,L));return}
   if(sel.kind==="line"){var pp=sel.id.split(":"),LL=LAYERS.filter(function(x){return x.id===pp[0]})[0],ln=LL.lns[+pp[1]];
     card.appendChild(h("div",{className:"chead"},[h("span",{className:"big",html:'<svg viewBox="0 0 24 24" width="32" height="32" style="color:'+ln.c+'">'+IC.line+'</svg>'}),h("h3",{text:ln.n}),closeBtn()]));
@@ -1789,7 +1804,7 @@ var TOUR=[
  {ic:"star",el:"#card",art:5,t:"Markers from your Google map",b:"Tap any marker to read its note, like this one at Rapid 3. You can give it a colour, attach icons such as a lifeguard or a hazard, and add your own notes.",enter:function(){var id=r3mark();if(id){select({kind:"mark",id:id});var m=markById(id);go(centreOn(m.x,m.y,Math.max(view.k,kfit*3.2)))}}},
  {ic:"layers",el:"#pLayers",art:6,t:"Layers",b:"Switch groups of markers on or off. “Satellite photo” puts real imagery under the river (website version). “Hide old 2014–2016 markers” keeps the old stations out of the way. The target button flies the map to a layer.",enter:function(){select(null);closePops();$("pLayers").hidden=false;$("bLayers").setAttribute("aria-expanded","true");renderLayers()}},
  {ic:"race",el:"#dock",art:7,t:"Race kit",b:"Drag a counter from the dock onto the river. It settles on the nearest bank: river-left, mid-river or river-right. Counters that overlap stack into a numbered disc; tap it to split them.",enter:function(){closePops();setTab("race")}},
- {ic:"safety",el:"#dock",art:8,t:"Safety",b:"Ambulances, first aid posts, lifeguards and throw ropes. Tap any counter on the map to label it, move it to the other bank, duplicate it or remove it.",enter:function(){setTab("safety")}},
+ {ic:"safety",el:"#dock",art:8,t:"Safety",b:"Ambulances, first aid posts, lifeguards and throw ropes. Tap any counter on the map to label it, move it to the other bank, duplicate it or remove it. Anyone logged in can leave a comment on any icon; a purple bubble shows how many.",enter:function(){setTab("safety")}},
  {ic:"hazard",el:"#dock",art:9,t:"Hazards",b:"Strainers, debris, sharp rocks and wires are yellow diamonds, so they stand out from everything else on the board.",enter:function(){setTab("hazard")}},
  {ic:"pinI",el:"#dock",art:10,t:"Waypoints",b:"Drop a waypoint anywhere, name it and pick a colour. Then tap it and tap or drag icons onto it, like Rest, Water or a hazard. Drag a chip out of its card to take it off.",enter:function(){setTab("point")}},
  {ic:"pen",el:"#dock",art:11,t:"Draw on the map",b:"Apple Pencil or the mouse draws while your finger still moves the map. Choose pen, marker, arrow, text note or eraser in six colours. Tap ✕ or press Esc to stop drawing.",enter:function(){setTab("draw")}},
@@ -2118,6 +2133,45 @@ var lastBody={},lastLogKey={};
 function logAct(act,what,wh,key){if(!fbFs||!fbUid||myRole==="viewer")return Promise.resolve();var now=Date.now();
   if(key){if(lastLogKey[key]&&now-lastLogKey[key]<30000)return Promise.resolve();lastLogKey[key]=now}
   return fbFs.collection("log").add({uid:fbUid,name:myName||"Someone",dept:myDept||"",role:myRole,at:now,act:act,what:String(what||"").slice(0,90),where:String(wh||"").slice(0,40)}).catch(function(){})}
+/* ---------- Comments: anyone logged in can comment on any icon ----------
+   comments/{id} = {on:"item:<id>"|"wp:<id>"|"mark:<layer:ix>", text, cr:{by,at,uid}, dept}
+   ccount/all    = {n:{<key>:count}}  one small doc so the map can show badges without reading every comment */
+var cmCount={},cmSub=null,cmDraft={};
+function cmN(key){return Math.max(0,+cmCount[key]||0)}
+function cmBadge(n,x,y,k){return '<g class="cmb" transform="translate('+x+','+y+')'+(k?' scale('+k+')':'')+'"><path d="M-8.5-7h17a2.5 2.5 0 0 1 2.5 2.5v6.5a2.5 2.5 0 0 1-2.5 2.5H-.5l-4.5 4V4.5h-3.5A2.5 2.5 0 0 1-11 2v-6.5A2.5 2.5 0 0 1-8.5-7z" fill="#7b2cbf" stroke="#fff" stroke-width="1.4"/><text y="2.4" text-anchor="middle" fill="#fff" style="font:700 8px var(--map)">'+(n>9?"9+":n)+'</text></g>'}
+function startComments(){if(!fbFs)return;fbFs.collection("ccount").doc("all").onSnapshot(function(d){var n=(d.exists&&d.data().n)||{};var ch=JSON.stringify(n)!==JSON.stringify(cmCount);cmCount=n;if(ch){renderItems();renderPins();cmPaint()}},function(){})}
+function cmBump(key,v){if(!fbFs)return;var o={};o[key]=v;fbFs.collection("ccount").doc("all").set({n:o},{merge:true}).catch(function(){})}
+function cmWatch(key){if(cmSub&&cmSub.key===key)return cmSub;cmStop();var me=cmSub={key:key,list:null,off:null};
+  me.off=fbFs.collection("comments").where("on","==",key).onSnapshot(function(snap){
+    me.list=snap.docs.map(function(d){var v=d.data();return{id:d.id,text:String(v.text||""),cr:v.cr||{},dept:String(v.dept||"")}}).sort(function(a,b){return(a.cr.at||0)-(b.cr.at||0)});
+    if(!snap.metadata.fromCache&&!snap.metadata.hasPendingWrites&&canWrite&&cmN(key)!==me.list.length)cmBump(key,me.list.length);
+    if(cmSub===me)cmPaint()},function(){me.list=me.list||[];if(cmSub===me)cmPaint()});return me}
+function cmStop(){if(cmSub&&cmSub.off)cmSub.off();cmSub=null}
+function cmGrow(ta){ta.style.height="auto";ta.style.height=Math.min(120,ta.scrollHeight+2)+"px"}
+function cmBlock(key,what,x,y){if(!fbFs)return null;cmWatch(key);
+  var box=h("div",{className:"cmbox",id:"cmBox"});box._key=key;box._what=what;box._x=x;box._y=y;
+  box.appendChild(h("div",{className:"lbl-s",id:"cmHead",text:"Comments"}));box.appendChild(h("div",{id:"cmList"}));
+  var ta=h("textarea",{className:"inp cmin",id:"cmIn",maxLength:500,rows:1,placeholder:canWrite?"Add a comment…":"Log in to comment","aria-label":"Add a comment"});ta.value=cmDraft[key]||"";
+  var go=h("button",{type:"button",className:"btn primary cmgo",text:"Post"});ro(ta,whyNot());ro(go,whyNot());
+  function post(){var v=ta.value.trim();if(!v)return;var w=whyNot();if(w){deny(w,ta);return}ta.value="";cmDraft[key]="";cmGrow(ta);cmAdd(key,v,what,x,y)}
+  ta.addEventListener("input",function(){cmDraft[key]=ta.value;cmGrow(ta)});
+  ta.addEventListener("keydown",function(e){if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();post()}});
+  go.onclick=post;box.appendChild(h("div",{className:"cmrow"},[ta,go]));setTimeout(function(){cmGrow(ta);cmPaint()},0);return box}
+function cmPaint(){var box=$("cmBox");if(!box||!cmSub||cmSub.key!==box._key)return;var list=cmSub.list,hd=$("cmHead"),ls=$("cmList");
+  var n=list?list.length:cmN(box._key);hd.textContent="Comments"+(n?" · "+n:"");ls.textContent="";ls.className=list&&list.length?"cmlist":"";
+  if(!list){if(n)ls.appendChild(h("p",{className:"cmnone",text:"Loading comments…"}));return}
+  if(!list.length){ls.appendChild(h("p",{className:"cmnone",text:canWrite?"No comments yet.":"No comments yet. Log in to add one."}));return}
+  list.forEach(function(c){var mine=c.cr.uid&&c.cr.uid===fbUid,row=h("div",{className:"cm"+(mine?" mine":"")});
+    row.appendChild(h("div",{className:"cmt"},[h("b",{text:c.cr.by||"Someone"}),c.dept?h("span",{text:c.dept}):null,h("span",{text:c.cr.at?fmtCr(c.cr.at):""})]));
+    row.appendChild(h("p",{text:c.text}));
+    if(canWrite&&!whyNot(c)){var x=h("button",{type:"button",className:"cmx","aria-label":"Delete comment",title:"Delete comment",html:ico("close")});x.onclick=function(){cmDel(c,box._key,box._what,box._x,box._y)};row.appendChild(x)}
+    ls.appendChild(row)});ls.scrollTop=ls.scrollHeight}
+function cmAdd(key,text,what,x,y){if(!fbFs||whyNot())return;var d={on:key,text:text.slice(0,500),cr:mkCr(),dept:myDept||""};
+  fbFs.collection("comments").add(d).then(function(){setStatus("Live · saved","ok")},function(){setStatus("Comment not saved · check signal","warn")});
+  cmBump(key,firebase.firestore.FieldValue.increment(1));logAct("commented",what+": “"+text.slice(0,60)+(text.length>60?"…":"")+"”",secTxt(x,y))}
+function cmDel(c,key,what,x,y){var w=whyNot(c);if(w){deny(w);return}if(!window.confirm("Delete this comment?\n\n“"+c.text.slice(0,120)+"”"))return;
+  fbFs.collection("comments").doc(c.id).delete().catch(function(){setStatus("Not deleted · check signal","warn")});
+  cmBump(key,firebase.firestore.FieldValue.increment(-1));logAct("deleted a comment",what+": “"+c.text.slice(0,60)+"”",secTxt(x,y))}
 function secTxt(x,y){if(typeof x!=="number"||typeof y!=="number")return"";var w=where(x,y);return w.r.d<80?"Section "+w.s.n:"off the river"}
 function thingName(col,id,d){d=d||{};
   if(col==="items"){var t=TYPE[d.type];return(t?t.name:"Item")+(d.label?" “"+d.label+"”":"")}
@@ -2187,7 +2241,7 @@ async function startFirebase(){var B="https://www.gstatic.com/firebasejs/10.12.2
     var cred=await firebase.auth().signInAnonymously();fbUid=cred.user.uid;
     var mem=null;try{mem=await fbFs.doc("members/"+fbUid).get()}catch(_){}
     if(mem&&mem.exists){var md=mem.data()||{};myRole=md.role==="admin"?"admin":"editor";if(typeof md.name==="string"&&md.name)myName=md.name.slice(0,40);if(typeof md.dept==="string")myDept=md.dept.slice(0,40)}else myRole="viewer";
-    setWrite(myRole!=="viewer");startShared(fbFs);logVisit();handleInvite();
+    setWrite(myRole!=="viewer");startShared(fbFs);startComments();logVisit();handleInvite();
   }catch(e){setStatus("Offline · on this device","warn")}}
 function setWrite(ok){canWrite=ok;if(!ok){setArmed(null);setTool(null)}renderTray();updUndo();renderCard();setStatus(ok?"Live":"View only",ok?"ok":"warn");renderAcct()}
 /* ---------- Joining: view only → editor (name + department) → admin (+ admin code) ---------- */
