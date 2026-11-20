@@ -376,6 +376,16 @@ textarea.inp{min-height:80px;resize:vertical;line-height:1.4}
 .rv-name{font-size:20px!important;padding:14px 16px!important}
 .rv-notes{font-size:18px!important;min-height:140px;padding:14px 16px!important}
 .ph-thumb{display:block;width:100%;max-height:240px;object-fit:cover;border-radius:12px;background:#e4e8ef;cursor:zoom-in}
+.phwrap{position:relative}.phwrap .ph-thumb{height:150px}.phbadge{position:absolute;left:8px;bottom:8px;display:flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;background:rgba(17,20,24,.82);color:#fff;font:650 12.5px var(--ui);pointer-events:none;white-space:nowrap}.phbadge svg{width:16px;height:16px;flex:none}
+.pchoose{display:grid;gap:10px;margin:4px 0 12px}.pchoose .btn{justify-content:flex-start;height:auto;min-height:60px;padding:10px 14px;text-align:left}.pchoose .btn svg{width:26px;height:26px;flex:none}
+.pchoose .btn b{display:block;font-size:15.5px}.pchoose .btn small{display:block;font-weight:500;color:var(--muted);font-size:12.5px;margin-top:2px}
+.pguide{border-radius:12px;background:#f3f5f8;padding:2px 12px;margin-bottom:10px}.pguide summary{cursor:pointer;padding:10px 0;font-weight:650;font-size:14px}
+.pguide p{margin:0 0 10px;font-size:13.5px;line-height:1.45}.pguide p b{display:block;margin-bottom:2px}
+.pv-stage{position:relative;flex:1;width:100%;min-height:0;display:flex}
+.pv-pan{flex:1;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;cursor:grab;border-radius:8px;overscroll-behavior:contain;scrollbar-width:thin}.pv-pan.drag{cursor:grabbing}
+.pv-pan{display:flex;align-items:center}#pview .pv-pan img{display:block;flex:none;height:min(100%,80vh,60vw);width:auto;max-width:none;max-height:none;border-radius:0;object-fit:fill}
+.pv-360{flex:1;border-radius:8px;overflow:hidden;background:#000}
+.pv-tip{position:absolute;left:50%;top:14px;transform:translateX(-50%);padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.92);color:#111418;font:650 13px var(--ui);pointer-events:none;transition:opacity .6s;white-space:nowrap}.pv-tip.fade{opacity:0}
 .ph-missing{padding:12px;border-radius:12px;background:#f1f3f7;color:var(--muted);font-size:13px}
 .ph-prev:empty{display:none}
 .rv-cam{display:flex;align-items:center;justify-content:center;gap:10px;height:60px;border-radius:16px;background:#eef1f6;border:2px solid #111418;font:700 18px var(--map)}
@@ -556,7 +566,7 @@ html,body{overscroll-behavior:none}
 <div id="ghost" hidden></div>
 <input type="file" id="camIn" accept="image/*" capture="environment" hidden>
 <input type="file" id="picIn" accept="image/*" hidden>
-<div id="pview" hidden><img alt="Photo"><div class="pv-bar"><span class="pv-cap"></span><button type="button" class="pv-x" aria-label="Close photo">Close</button></div></div>
+<div id="pview" hidden><img alt="Photo"><div class="pv-stage" hidden></div><div class="pv-bar"><span class="pv-cap"></span><button type="button" class="pv-x" aria-label="Close photo">Close</button></div></div>
 
 <script>
 (function(){
@@ -896,7 +906,7 @@ function renderItems(){
 }
 function drawItem(it){var t=TYPE[it.type],isSel=sel&&sel.kind==="item"&&sel.id===it.id;
   var g=el("g",{class:"item fam-"+t.fam+(isSel?" sel":""),"data-id":it.id},gItems);
-  g.innerHTML='<circle class="ring" r="20" fill="rgba(255,195,0,.4)" stroke="#111418" stroke-width="2.4"/><circle r="18" fill="transparent"/><g filter="url(#sh)">'+token(t,it.color)+'</g>'+(it.photo?camBadge(12,-12):"")+(it.locked?lockBadge(-12,12):"")+(it.tm&&TIMED[it.type]?tmPill(it.tm,0,-31):"")+(cmN("item:"+it.id)?cmBadge(cmN("item:"+it.id),-13,-12):"");
+  g.innerHTML='<circle class="ring" r="20" fill="rgba(255,195,0,.4)" stroke="#111418" stroke-width="2.4"/><circle r="18" fill="transparent"/><g filter="url(#sh)">'+token(t,it.color)+'</g>'+(it.photo?camBadge(12,-12,it.photo):"")+(it.locked?lockBadge(-12,12):"")+(it.tm&&TIMED[it.type]?tmPill(it.tm,0,-31):"")+(cmN("item:"+it.id)?cmBadge(cmN("item:"+it.id),-13,-12):"");
   var txt=it.label||(t.id==="start"||t.id==="finish"?t.name:"");
   if(txt){var always=isSel||t.id==="flag"||t.id==="start"||t.id==="finish";var lg=el("g",{class:always?"":"l2"},g);
     label(lg,String(txt).slice(0,40),0,30,"middle","big",isSel?300:always?95:70)}
@@ -933,15 +943,15 @@ function badges(icons,y){var order=[],cnt={};icons.forEach(function(t){if(!TYPE[
 function wpBody(o){var b={name:o.name||"",color:o.color||"#d7263d",notes:o.notes||"",icons:o.icons.slice(),x:o.x,y:o.y};if(o.rep)b.rep=o.rep;if(o.photo)b.photo=o.photo;if(o.locked)b.locked=true;if(o.cr)b.cr=o.cr;if(o.tm)b.tm=o.tm;if(o.st)b.st=o.st;return b}
 function renderWps(){var gw=$("gWp");gw.textContent="";posEls=posEls.filter(function(p){return p.kind!=="wp"});
   wps.forEach(function(o,id){var isSel=sel&&sel.kind==="wp"&&sel.id===id,g=el("g",{class:"wp"+(o.st==="dot"?" dot":"")+(isSel?" sel":""),"data-wp":id},gw);
-    if(o.st==="dot"){g.innerHTML='<circle class="ring" r="15" fill="rgba(255,195,0,.4)" stroke="#111418" stroke-width="2"/><circle r="13" fill="transparent"/><circle r="4.5" fill="#fff" stroke="#5b6573" stroke-width="1.8"/>'+badges(o.icons,-22)+(o.photo?camBadge(9,-9):"")+(o.locked?lockBadge(-9,9):"")+(cmN("wp:"+id)?cmBadge(cmN("wp:"+id),-11,-10):"");
+    if(o.st==="dot"){g.innerHTML='<circle class="ring" r="15" fill="rgba(255,195,0,.4)" stroke="#111418" stroke-width="2"/><circle r="13" fill="transparent"/><circle r="4.5" fill="#fff" stroke="#5b6573" stroke-width="1.8"/>'+badges(o.icons,-22)+(o.photo?camBadge(9,-9,o.photo):"")+(o.locked?lockBadge(-9,9):"")+(cmN("wp:"+id)?cmBadge(cmN("wp:"+id),-11,-10):"");
       label(g,o.name||"Landmark",8,4,"start","m",isSel?300:20);o.el=g;posEls.push({el:g,x:o.x,y:o.y,wp:o,kind:"wp"});g.setAttribute("transform","translate("+o.x+","+o.y+") scale("+1/view.k+")");return}
     g.innerHTML='<circle class="ring" cy="-18" r="18" fill="rgba(255,195,0,.4)" stroke="#111418" stroke-width="2.4"/><circle cy="-16" r="17" fill="transparent"/>'+
-      '<g filter="url(#sh)"><path d="M0 0C-3-6-11.5-11-11.5-18.5A11.5 11.5 0 1 1 11.5-18.5C11.5-11 3-6 0 0Z" fill="'+o.color+'" stroke="#fff" stroke-width="2"/></g><circle cy="-18.5" r="4.2" fill="#fff"/>'+badges(o.icons,-41)+(o.photo?camBadge(10,-28):"")+(o.locked?lockBadge(-10,-8):"")+(o.tm?tmPill(o.tm,30,-18):"")+(cmN("wp:"+id)?cmBadge(cmN("wp:"+id),-13,-29):"");
+      '<g filter="url(#sh)"><path d="M0 0C-3-6-11.5-11-11.5-18.5A11.5 11.5 0 1 1 11.5-18.5C11.5-11 3-6 0 0Z" fill="'+o.color+'" stroke="#fff" stroke-width="2"/></g><circle cy="-18.5" r="4.2" fill="#fff"/>'+badges(o.icons,-41)+(o.photo?camBadge(10,-28,o.photo):"")+(o.locked?lockBadge(-10,-8):"")+(o.tm?tmPill(o.tm,30,-18):"")+(cmN("wp:"+id)?cmBadge(cmN("wp:"+id),-13,-29):"");
     if(o.name)label(g,o.name,0,14,"middle","big",isSel?300:90);o.el=g;posEls.push({el:g,x:o.x,y:o.y,wp:o,kind:"wp"});
     g.setAttribute("transform","translate("+o.x+","+o.y+") scale("+1/view.k+")")});schedDeclutter()}
 function renderMarkDecor(){LAYERS.forEach(function(L){L.pts.forEach(function(m){var o=mo[L.id+":"+m.ix];
   m.bg.innerHTML=o&&o.color?'<circle r="13.5" fill="'+o.color+'" fill-opacity=".22" stroke="'+o.color+'" stroke-width="2.6"/>':"";
-  var ck="mark:"+L.id+":"+m.ix;m.fg.innerHTML=(o&&o.icons.length?badges(o.icons,-25):"")+(o&&o.photo?camBadge(10,-10):"")+(o&&o.locked?lockBadge(-10,10):"")+(cmN(ck)?cmBadge(cmN(ck),-13,-12,1.25):"")})})}
+  var ck="mark:"+L.id+":"+m.ix;m.fg.innerHTML=(o&&o.icons.length?badges(o.icons,-25):"")+(o&&o.photo?camBadge(10,-10,o.photo):"")+(o&&o.locked?lockBadge(-10,10):"")+(cmN(ck)?cmBadge(cmN(ck),-13,-12,1.25):"")})})}
 function renderPins(){renderWps();renderMarkDecor();renderPips()}
 function pinTarget(e){return e.classList.contains("wp")?{kind:"wp",id:e.getAttribute("data-wp")}:{kind:"mark",id:e.getAttribute("data-mark")}}
 function isPinSel(){return sel&&(sel.kind==="wp"||sel.kind==="mark")}
@@ -1381,7 +1391,7 @@ document.addEventListener("keydown",function(e){var tag=(e.target.tagName||"").t
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){e.preventDefault();if(canWrite)undo();return}
   if(e.key==="Escape"&&!$("xmodal").hidden){closeExport();return}
   if(e.key==="Escape"&&!$("lmodal").hidden){closeLatest();return}
-  if(e.key==="Escape"&&!$("pview").hidden){$("pview").hidden=true;return}
+  if(e.key==="Escape"&&!$("pview").hidden){closePhoto();return}
   if(e.key==="Escape"&&riverOn){if(!rvEl("rvSheet").hidden)rvEl("rvSheet").hidden=true;else exitRiver();return}
   if(e.key==="Escape"){if(armed||tool){setArmed(null);setTool(null);if(tab==="draw")renderTray()}else select(null);closePops()}
   if((e.key==="Delete"||e.key==="Backspace")&&sel&&canWrite){if(sel.kind==="wp"){e.preventDefault();delWp(sel.id)}else if(sel.kind==="item"){e.preventDefault();delItem(sel.id)}else if(sel.kind==="ink"){e.preventDefault();removeInk(sel.id)}}});
@@ -1634,22 +1644,46 @@ function tourArt(i){if(ART2[i])return ART2[i]();var a=ABG,D="5s";
   return '<svg viewBox="0 0 320 120" aria-hidden="true">'+a+'</svg>'}
 
 /* ---------- Photos: camera capture, shrink, store (phone now, shared later) ---------- */
-var PH={mem:new Map(),idb:null,cb:null};
+var PH={mem:new Map(),idb:null,cb:null,kinds:new Map()};
+/* photo ids carry their kind: p… normal, w… panorama (wide), s… 360° sphere */
+function photoKind(pid){var c=String(pid||"").charAt(0);return c==="w"?"pano":c==="s"?"360":""}
+var PH_CHUNK=900000;
 function phDB(){return new Promise(function(res){if(PH.idb)return res(PH.idb);try{var r=indexedDB.open("geroh-photos",1);r.onupgradeneeded=function(){r.result.createObjectStore("p")};
   r.onsuccess=function(){PH.idb=r.result;res(PH.idb)};r.onerror=function(){res(null)}}catch(_){res(null)}})}
 async function phPut(id,data){PH.mem.set(id,data);var d=await phDB();if(d){try{d.transaction("p","readwrite").objectStore("p").put(data,id)}catch(_){}}
-  if(db)store("photos",id,{data:data,at:Date.now()})}
+  if(db){var now=Date.now();if(data.length<=PH_CHUNK)store("photos",id,{data:data,at:now});
+    else{var n=Math.ceil(data.length/PH_CHUNK);for(var i=0;i<n;i++)store("photos",id+"~"+i,{data:data.slice(i*PH_CHUNK,(i+1)*PH_CHUNK),at:now});store("photos",id,{parts:n,at:now})}}}
 async function phGet(id){if(!id)return null;if(PH.mem.has(id))return PH.mem.get(id);var d=await phDB();
   if(d){var v=await new Promise(function(res){try{var q=d.transaction("p").objectStore("p").get(id);q.onsuccess=function(){res(q.result||null)};q.onerror=function(){res(null)}}catch(_){res(null)}});if(v){PH.mem.set(id,v);return v}}
-  if(db){try{var s2=await db.doc("photos/"+id).get();if(s2.exists){var v2=(s2.data()||{}).data;if(typeof v2==="string"&&v2.indexOf("data:image/")===0){PH.mem.set(id,v2);if(d){try{d.transaction("p","readwrite").objectStore("p").put(v2,id)}catch(_){}}return v2}}}catch(_){}}
+  if(db){try{var s2=await db.doc("photos/"+id).get();if(s2.exists){var sd=s2.data()||{},v2=sd.data;
+    if(!v2&&sd.parts>0&&sd.parts<12){var ps=await Promise.all(Array.from({length:sd.parts},function(_,i){return db.doc("photos/"+id+"~"+i).get()}));
+      if(ps.every(function(x){return x.exists&&typeof (x.data()||{}).data==="string"}))v2=ps.map(function(x){return x.data().data}).join("")}if(typeof v2==="string"&&v2.indexOf("data:image/")===0){PH.mem.set(id,v2);if(d){try{d.transaction("p","readwrite").objectStore("p").put(v2,id)}catch(_){}}return v2}}}catch(_){}}
   return null}
+/* panoramas and 360° photos: spotted from their shape (and the 360 tag cameras write), kept bigger */
+function kindOfPhoto(file,w,hh){var a=w/hh;return file.slice(0,262144).text().then(function(t){return /equirectangular/i.test(t)||(/GPano:/.test(t)&&/FullPanoWidthPixels/.test(t))},function(){return false}).then(function(tag){
+  if(tag&&a>1.9&&a<2.1)return"360";if(Math.abs(a-2)<.01&&w>=3000)return"360";if(a>=2.3||(tag&&a>=2.1))return"pano";return""})}
+function shrinkWide(im,kind){var w=im.naturalWidth,hh=im.naturalHeight,sc=Math.min(1,4096/w);if(kind==="pano")sc=Math.min(sc,1600/hh);
+  var c=document.createElement("canvas");c.width=Math.round(w*sc);c.height=Math.round(hh*sc);c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+  var q=.8,out=c.toDataURL("image/jpeg",q);while(out.length>2600000&&q>.45){q-=.08;out=c.toDataURL("image/jpeg",q)}return out}
 function shrinkPhoto(file){return new Promise(function(res,rej){var url=URL.createObjectURL(file),im=new Image();
-  im.onload=function(){var M=1280,w=im.naturalWidth,hh=im.naturalHeight,sc=Math.min(1,M/Math.max(w,hh)),c=document.createElement("canvas");c.width=Math.round(w*sc);c.height=Math.round(hh*sc);
-    c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(url);var q=.72,out=c.toDataURL("image/jpeg",q);while(out.length>380000&&q>.42){q-=.1;out=c.toDataURL("image/jpeg",q)}res(out)};
+  im.onload=function(){var w0=im.naturalWidth,h0=im.naturalHeight;kindOfPhoto(file,w0,h0).then(function(kind){if(kind){var o2=shrinkWide(im,kind);URL.revokeObjectURL(url);PH.kinds.set(o2,kind);res(o2);return}
+    var M=1280,w=im.naturalWidth,hh=im.naturalHeight,sc=Math.min(1,M/Math.max(w,hh)),c=document.createElement("canvas");c.width=Math.round(w*sc);c.height=Math.round(hh*sc);
+    c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(url);var q=.72,out=c.toDataURL("image/jpeg",q);while(out.length>380000&&q>.42){q-=.1;out=c.toDataURL("image/jpeg",q)}res(out)})};
   im.onerror=function(){URL.revokeObjectURL(url);rej(new Error("That photo couldn't be read. Try taking it again."))};im.src=url})}
+function photoChooser(cb){var m=$("jmodal"),pnl=$("jpanel");m.hidden=false;pnl.textContent="";var touch=window.matchMedia&&matchMedia("(pointer:coarse)").matches;
+  function big(icon,t,sub,fn){var b=h("button",{type:"button",className:"btn",html:icon},[h("span",{},[h("b",{text:t}),h("small",{text:sub})])]);b.onclick=function(){m.hidden=true;fn()};return b}
+  pnl.appendChild(h("h2",{text:"Add a photo"}));
+  var ch=h("div",{className:"pchoose"});if(touch)ch.appendChild(big(ico("camera"),"Take a photo","Opens the camera for a normal photo",function(){takePhoto(true,cb)}));
+  ch.appendChild(big(svgI('<rect x="3" y="5" width="18" height="14" rx="2" '+S+'/><circle cx="9" cy="10" r="1.6" '+S+'/><path d="M21 16l-5-5-8 8" '+S+'/>'),"Choose a file","A photo, panorama or 360° photo you already have",function(){takePhoto(false,cb)}));pnl.appendChild(ch);
+  var g=h("details",{className:"pguide"});g.appendChild(h("summary",{text:"Want a panorama or a 360° photo?"}));
+  g.appendChild(h("p",{},[h("b",{text:"Panorama: any phone"}),"Open your phone’s own Camera app and choose Pano (iPhone) or Panorama (Android). Stand still and turn slowly. Then come back here and press Choose a file."]));
+  g.appendChild(h("p",{},[h("b",{text:"360° photo: needs a 360 camera"}),"A normal phone camera can’t take a 360° photo, and Take a photo here always takes a normal one. Use a 360 camera such as an Insta360 or Ricoh Theta, save the photo as a JPG on your phone or computer, then press Choose a file."]));
+  g.appendChild(h("p",{text:"The map spots panoramas and 360° photos by itself. Anyone can then tap them and drag to look around."}));pnl.appendChild(g);
+  pnl.appendChild(h("div",{className:"xfoot"},[h("span",{className:"xmsg"}),h("button",{type:"button",className:"btn big",text:"Cancel",onclick:function(){m.hidden=true}})]))}
 function takePhoto(camera,cb){var inp=$(camera?"camIn":"picIn");PH.cb=cb;inp.value="";inp.click()}
 function onPhotoPicked(e){var f=e.target.files&&e.target.files[0],cb=PH.cb;PH.cb=null;if(!f||!cb)return;
-  if(riverOn)rvToast("Saving photo…",false);shrinkPhoto(f).then(cb,function(err){if(riverOn)rvToast(err.message,false)})}
+  if(riverOn)rvToast("Saving photo…",false);else showHint(ico("camera"),"Preparing photo…",true);
+  shrinkPhoto(f).then(function(d){if(!riverOn)hideHint();cb(d)},function(err){if(riverOn)rvToast(err.message,false);else showHint(ico("camera"),err.message,false)})}
 function objOf(kind,id,create){return kind==="item"?items.get(id):kind==="wp"?wps.get(id):getPin({kind:"mark",id:id},create)}
 function saveObj(kind,id,o){if(kind==="item")putItem(o);else if(kind==="wp")putWp(o);else{savePin({kind:"mark",id:id});renderPins();renderCard()}}
 function isLocked(kind,id){var o=objOf(kind,id);return!!(o&&o.locked)}
@@ -1661,19 +1695,40 @@ function lockBtn(kind,id){var on=isLocked(kind,id),b=h("button",{type:"button",c
   b.onclick=function(){toggleLock(kind,id)};var lo=objOf(kind,id);return ro(b,kind==="mark"?whyNot():whyNot(lo||{}))}
 function lockBadge(x,y){return '<g transform="translate('+x+','+y+')"><circle r="6.6" fill="#fff" stroke="#111418" stroke-width="1.3"/><rect x="-3.1" y="-.6" width="6.2" height="4.6" rx="1.1" fill="#111418"/><path d="M-1.9-.6V-2.1a1.9 1.9 0 0 1 3.8 0V-.6" fill="none" stroke="#111418" stroke-width="1.3"/></g>'}
 function photoBlock(kind,id,o,caption,library){var out=[],wy=kind==="mark"?whyNot():whyNot(o);if(o&&o.photo)out.push(photoThumb(o.photo,caption));
-  {var a=[ro(btn("camera",o&&o.photo?"Replace photo":"Add photo",function(){takePhoto(!library,function(d){attachPhoto(kind,id,d)})}),wy)];
+  {var a=[ro(btn("camera",o&&o.photo?"Replace photo":"Add photo",function(){photoChooser(function(d){attachPhoto(kind,id,d)})}),wy)];
     if(o&&o.photo&&!o.locked)a.push(ro(btn("trash","Remove photo",function(){removePhoto(kind,id)},"danger"),wy));out.push(h("div",{className:"actions"},a))}return out}
-function attachPhoto(kind,id,data){var o=objOf(kind,id,true);if(!o)return;var pid="p"+String(id).replace(/[^A-Za-z0-9_-]/g,"_")+Date.now().toString(36);
+function attachPhoto(kind,id,data){var o=objOf(kind,id,true);if(!o)return;var pk=PH.kinds.get(data)||"";PH.kinds.delete(data);
+  if(pk&&!riverOn)showHint(ico("camera"),pk==="360"?"360° photo added. Tap it to look around.":"Panorama added. Tap it to look around.",false);var pid=(pk==="360"?"s":pk==="pano"?"w":"p")+String(id).replace(/[^A-Za-z0-9_-]/g,"_")+Date.now().toString(36);
   phPut(pid,data).then(function(){var o2=objOf(kind,id,true);o2.photo=pid;saveObj(kind,id,o2);renderPhotoBadges();if(riverOn){rvToast("Photo added",false);if(!rvEl("rvSheet").hidden&&rvSheetFor)rvSheetFor()}})}
 function removePhoto(kind,id){var o=objOf(kind,id);if(!o)return;if(o.locked){lockedMsg();return}delete o.photo;saveObj(kind,id,o)}
-function photoThumb(pid,caption){var im=h("img",{className:"ph-thumb",alt:caption||"Photo",title:"Tap to view full screen"});im.onclick=function(){viewPhoto(pid,caption)};
+function photoThumb(pid,caption){var pk=photoKind(pid),im=h("img",{className:"ph-thumb",alt:caption||"Photo",title:pk?"Tap to look around":"Tap to view full screen"});im.onclick=function(){viewPhoto(pid,caption)};
+  if(pk){var wrap=h("div",{className:"phwrap"},[im,h("span",{className:"phbadge",html:ico("camera")+"<span></span>"})]);wrap.querySelector(".phbadge span").textContent=pk==="360"?"360° · tap to look around":"Panorama · tap to look around";
+    phGet(pid).then(function(d){if(d)im.src=d;else wrap.replaceWith(h("div",{className:"ph-missing",text:"Photo not on this device yet"}))});return wrap}
   phGet(pid).then(function(d){if(d)im.src=d;else{im.replaceWith(h("div",{className:"ph-missing",text:"Photo not on this device yet"}))}});return im}
-function viewPhoto(pid,caption){var v=$("pview");v.hidden=false;var img=v.querySelector("img");img.removeAttribute("src");v.querySelector(".pv-cap").textContent=caption||"";phGet(pid).then(function(d){if(d)img.src=d})}
+var PNL=null,pnlView=null;
+function loadPannellum(){if(window.pannellum)return Promise.resolve();if(PNL)return PNL;PNL=new Promise(function(res,rej){var base="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.";
+  var l=document.createElement("link");l.rel="stylesheet";l.href=base+"css";document.head.appendChild(l);var sc=document.createElement("script");sc.src=base+"js";
+  sc.onload=function(){window.pannellum?res():rej()};sc.onerror=function(){PNL=null;rej()};document.head.appendChild(sc)});return PNL}
+function closePhoto(){var v=$("pview");v.hidden=true;if(pnlView){try{pnlView.destroy()}catch(_){}pnlView=null}var st=v.querySelector(".pv-stage");st.textContent="";st.hidden=true;v.querySelector("img").hidden=false}
+function panView(st,d,tipText){st.textContent="";var sc=h("div",{className:"pv-pan"}),im=h("img",{alt:"Panorama"}),tip=h("div",{className:"pv-tip",text:tipText||"Drag to look around"});sc.appendChild(im);st.appendChild(sc);st.appendChild(tip);
+  im.onload=function(){sc.scrollLeft=(sc.scrollWidth-sc.clientWidth)/2};im.src=d;setTimeout(function(){tip.classList.add("fade")},2600);
+  var dr=null;sc.addEventListener("pointerdown",function(e){if(e.pointerType!=="mouse")return;dr={x:e.clientX,l:sc.scrollLeft};sc.classList.add("drag");try{sc.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()});
+  sc.addEventListener("pointermove",function(e){if(dr)sc.scrollLeft=dr.l-(e.clientX-dr.x)});
+  ["pointerup","pointercancel"].forEach(function(t){sc.addEventListener(t,function(){dr=null;sc.classList.remove("drag")})});
+  sc.addEventListener("wheel",function(e){if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){sc.scrollLeft+=e.deltaY;e.preventDefault()}},{passive:false})}
+function viewPhoto(pid,caption){var v=$("pview"),pk=photoKind(pid);closePhoto();v.hidden=false;var img=v.querySelector("img"),st=v.querySelector(".pv-stage");img.removeAttribute("src");v.querySelector(".pv-cap").textContent=caption||"";
+  if(!pk){phGet(pid).then(function(d){if(d)img.src=d});return}
+  img.hidden=true;st.hidden=false;st.appendChild(h("div",{className:"pv-tip",text:"Loading…"}));
+  phGet(pid).then(function(d){if(!d||v.hidden){if(!d)st.firstChild.textContent="Photo not on this device yet";return}
+    if(pk==="pano"){panView(st,d);return}
+    loadPannellum().then(function(){if(v.hidden)return;st.textContent="";var box=h("div",{className:"pv-360",id:"pv360"}),tip=h("div",{className:"pv-tip",text:"Drag to look around · pinch or scroll to zoom"});st.appendChild(box);st.appendChild(tip);setTimeout(function(){tip.classList.add("fade")},3000);
+      pnlView=window.pannellum.viewer(box,{type:"equirectangular",panorama:d,autoLoad:true,showFullscreenCtrl:false,compass:false,hfov:100,mouseZoom:true,keyboardZoom:true})},
+      function(){panView(st,d,"360° viewer needs signal. Showing it flat: drag to look around")})})}
 function photoAsk(kind,id){var o=kind==="item"?items.get(id):wps.get(id);if(!o)return;
   var tb=h("button",{type:"button",className:"rv-btn cam",html:svgI(IC.camera)+"<span>Take photo</span>"}),sk=h("button",{type:"button",className:"rv-btn",html:svgI(IC.close)+"<span>Skip</span>"});
   tb.onclick=function(){rvEl("rvSheet").hidden=true;takePhoto(true,function(d){attachPhoto(kind,id,d)})};sk.onclick=function(){rvEl("rvSheet").hidden=true};
   sheet("Add a photo?",[h("p",{text:"A quick photo helps the team see exactly what's there."}),h("div",{className:"rv-grid two"},[tb,sk])],false,true)}
-function camBadge(x,y){return '<g transform="translate('+x+','+y+')"><circle r="7.5" fill="#111418" stroke="#fff" stroke-width="1.5"/><rect x="-4.2" y="-2.6" width="8.4" height="6" rx="1.3" fill="#fff"/><rect x="-1.6" y="-4.2" width="3.2" height="2" rx=".6" fill="#fff"/><circle cy=".4" r="1.7" fill="#111418"/></g>'}
+function camBadge(x,y,pid){if(photoKind(pid)==="360")return '<g transform="translate('+x+','+y+')"><circle r="8.5" fill="#111418" stroke="#fff" stroke-width="1.5"/><text y="2.3" text-anchor="middle" fill="#fff" style="font:800 6.4px var(--map)">360</text></g>';return '<g transform="translate('+x+','+y+')"><circle r="7.5" fill="#111418" stroke="#fff" stroke-width="1.5"/><rect x="-4.2" y="-2.6" width="8.4" height="6" rx="1.3" fill="#fff"/><rect x="-1.6" y="-4.2" width="3.2" height="2" rx=".6" fill="#fff"/><circle cy=".4" r="1.7" fill="#111418"/></g>'}
 function renderPhotoBadges(){renderItems();renderWps()}
 function photoCount(){var n=0;items.forEach(function(it){if(it.photo)n++});wps.forEach(function(o){if(o.photo)n++});for(var k in mo)if(mo[k].photo)n++;return n}
 
@@ -2016,7 +2071,7 @@ async function doExport(opts){opts=opts&&opts.snap?opts:{};if(exporting)return;
         if(data){var dim=await new Promise(function(res){var im=new Image();im.onload=function(){res([im.naturalWidth,im.naturalHeight])};im.onerror=function(){res(null)};im.src=data});
           if(dim){var sc=Math.min(pcw/dim[0],pih/dim[1]),iw=dim[0]*sc,ih=dim[1]*sc;doc.addImage(data,"JPEG",cx+(pcw-iw)/2,cy+(pih-ih)/2,iw,ih)}}
         else{doc.setFontSize(8);doc.setTextColor(152,162,176);doc.text("Photo not on this device",cx+pcw/2,cy+pih/2,{align:"center"})}
-        var wr=onRiver(P2.x,P2.y),sc2=secOfIdx(wr.i),ty=cy+pih+5;doc.setTextColor(17,20,24);doc.setFont("helvetica","bold");doc.setFontSize(9.5);doc.text(pdfText(P2.title),cx,ty);
+        var wr=onRiver(P2.x,P2.y),sc2=secOfIdx(wr.i),ty=cy+pih+5;doc.setTextColor(17,20,24);doc.setFont("helvetica","bold");doc.setFontSize(9.5);doc.text(pdfText(P2.title+(photoKind(P2.pid)==="360"?" (360° photo)":photoKind(P2.pid)==="pano"?" (panorama)":"")),cx,ty);
         doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(91,101,115);var lines=["Section "+sc2.n+" "+sc2.name+", km "+(wr.s*MPU/1000).toFixed(2)];
         if(P2.rep)lines.push("Added by "+P2.rep.by+", "+new Date(P2.rep.at).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}));
         var yy=ty+4.2;lines.forEach(function(l){doc.text(pdfText(l),cx,yy);yy+=3.8});
@@ -2030,7 +2085,7 @@ async function doExport(opts){opts=opts&&opts.snap?opts:{};if(exporting)return;
     setXmsg("Confirm the download…");await dl.save({filename:fname,data:blob});setXmsg("Saved "+fname);
   }catch(e){setXmsg(e&&e.code==="declined"?"Download cancelled.":e&&e.code==="rate_limited"?"A download prompt is already open.":"Could not export: "+(e&&e.message||"unknown error"))}
   finally{if(restore)restore();exporting=false;var b2=$("xgo");if(b2)b2.disabled=false;var lb2=$("lgo");if(lb2)lb2.disabled=false}}
-$("camIn").addEventListener("change",onPhotoPicked);$("picIn").addEventListener("change",onPhotoPicked);$("pview").addEventListener("click",function(e){if(e.target.tagName!=="IMG")$("pview").hidden=true});
+$("camIn").addEventListener("change",onPhotoPicked);$("picIn").addEventListener("change",onPhotoPicked);$("pview").addEventListener("click",function(e){if(e.target.closest&&e.target.closest(".pv-stage"))return;if(e.target.tagName!=="IMG")closePhoto()});
 $("bExport").innerHTML=ico("dl")+"<span>Export</span>";$("bRiver").innerHTML=svgI('<path d="M2 9c3 0 3-2 6-2s3 2 6 2 3-2 6-2M2 15c3 0 3-2 6-2s3 2 6 2 3-2 6-2" '+S+' stroke-width="2.2"/>')+"<span>River mode</span>";$("bRiver").onclick=enterRiver;$("bExport").onclick=openExport;$("xback").onclick=closeExport;
 
 /* ---------- Latest briefing: every export is kept with a frozen copy of the plan ---------- */
