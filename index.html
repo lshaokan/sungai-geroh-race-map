@@ -333,7 +333,7 @@ textarea.inp{min-height:80px;resize:vertical;line-height:1.4}
 .xbtn{display:flex;align-items:center;gap:6px;height:36px;padding:0 12px 0 10px;border-radius:10px;background:var(--ink);color:#fff;font:600 13px var(--ui);margin-left:4px;white-space:nowrap}
 .xbtn svg{width:18px;height:18px}
 @media (hover:hover){.xbtn:hover{background:#2a2f36}}
-#xmodal,#jmodal,#lmodal,#amodal,#fmodal,#mmodal{position:absolute;inset:0;z-index:40;display:grid;place-items:center;padding:16px;box-sizing:border-box}
+#mmodal{z-index:47!important}#xmodal,#jmodal,#lmodal,#amodal,#fmodal,#mmodal{position:absolute;inset:0;z-index:40;display:grid;place-items:center;padding:16px;box-sizing:border-box}
 .xback{position:absolute;inset:0;background:rgba(17,20,24,.38)}
 .xpanel{position:relative;width:min(560px,100%);max-height:100%;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:16px;box-sizing:border-box;background:#fff}
 .xpanel h2{margin:0;font:700 20px var(--map)}
@@ -532,6 +532,7 @@ html,body{overscroll-behavior:none}
 #bMenu{display:none;position:relative}#bMenu .fdot{position:absolute;top:1px;right:1px;min-width:17px;height:17px;padding:0 4px;box-sizing:border-box;border-radius:9px;background:#d7263d;color:#fff;font:700 10.5px/17px var(--ui);text-align:center;box-shadow:0 0 0 2px #fff}
 .mrows{display:flex;flex-direction:column;gap:6px}.mrow{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:8px 12px;border-radius:14px;background:#f3f5f8;text-align:left}
 .mrow svg{width:24px;height:24px;flex:none}.mrow b{display:block;font-size:15.5px}.mrow small{display:block;color:var(--muted);font-size:12.5px;margin-top:1px}.mrow .mct{margin-left:auto;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:#d7263d;color:#fff;font:700 12px/22px var(--ui);text-align:center}
+.ipick{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:6px}.ipk{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:12px;background:#f3f5f8;font:600 12px var(--ui);color:var(--ink)}
 .sheetgrab{display:none}.popdone{display:none}
 @media (max-width:599px) and (min-height:501px){
   #hud{gap:6px;padding-block:6px;grid-template-rows:auto auto minmax(0,1fr) auto auto}
@@ -1250,7 +1251,8 @@ function pinEditor(tg,o,isMark){var frag=[],wy=isMark?whyNot():whyNot(o);
   if(order.length){var ch=h("div",{className:"chips"});order.forEach(function(t){var c=h("div",{className:"chip",title:"Drag out to remove or move",html:tokSvg(TYPE[t],null,28)},[h("span",{text:TYPE[t].short+(cnt[t]>1?" ×"+cnt[t]:"")})]);
       if(wy)ro(c,wy);else if(canWrite&&!(o&&o.locked)){var x=h("button",{type:"button",className:"x","aria-label":"Remove one "+TYPE[t].name,title:"Remove one",html:ico("close")});x.onclick=function(){detach(tg,t)};c.appendChild(x);
         c.addEventListener("pointerdown",function(e){chipDown(e,tg,t,c)})}ch.appendChild(c)});frag.push(ch)}
-  if(canWrite&&!wy)frag.push(h("div",{className:"dropzone",html:ico("drag")},[h("span",{text:"Tap or drag icons from the dock to add them here. Drag a chip out to remove it."})]));
+  frag.push(h("div",{className:"actions"},[ro(btn("plus","Add an icon",function(){iconPicker(tg)}),wy)]));
+  if(canWrite&&!wy&&!isPhone())frag.push(h("div",{className:"dropzone",html:ico("drag")},[h("span",{text:"Or drag icons from the dock onto this card. Drag a chip out to remove it."})]));
   var ta=h("textarea",{className:"inp",id:"pin-note",placeholder:"Notes for the team…",maxLength:2000});ro(ta,wy);ta.value=o&&o.notes||"";
   ta.addEventListener("input",function(){var p=getPin(tg,true);p.notes=ta.value;clearTimeout(noteT);noteT=setTimeout(function(){savePin(tg)},800)});frag.push(ta);
   return frag}
@@ -1482,6 +1484,24 @@ var PHONE=window.matchMedia?matchMedia("(max-width:599px) and (min-height:501px)
 function isPhone(){return !!(PHONE&&PHONE.matches)}
 var dockShut=true;function dockState(){var d=$("dock");if(d)d.classList.toggle("shut",isPhone()&&dockShut)}
 try{PHONE.addEventListener("change",function(){dockState();renderTabs()})}catch(_){}
+/* phones and tablets: Safari won't save a downloaded PDF, so offer the share sheet (Save to Files, WhatsApp, AirDrop…) or open it */
+/* pick an icon to attach to a waypoint or Google Maps marker: works on phones, where the dock is hidden behind the card */
+function iconPicker(tg){var o=getPin(tg),w=tg.kind==="mark"?whyNot():whyNot(o);if(w){deny(w);return}var m=$("mmodal"),p=$("mpanel");m.hidden=false;p.textContent="";
+  var mk=tg.kind==="mark"?markById(tg.id):null,nm=mk?(mk.base||mk.n):((o&&o.name)||"this waypoint");
+  p.appendChild(h("h2",{text:"Add an icon to "+nm}));
+  [["race","Race"],["safety","Safety"],["hazard","Hazards"],["point","Points"]].forEach(function(f){var ts=TYPES.filter(function(t){return t.fam===f[0]&&!isPinType(t.id)});if(!ts.length)return;
+    p.appendChild(h("div",{className:"lbl-s",style:"margin-bottom:-4px",text:f[1]}));var g=h("div",{className:"ipick"});
+    ts.forEach(function(t){var b=h("button",{type:"button",className:"ipk",html:tokSvg(t,null,40)+"<span></span>"});b.lastChild.textContent=t.short||t.name;
+      b.onclick=function(){m.hidden=true;attach(tg,t.id);showHint(tokSvg(t,null,22),t.name+" added to "+nm,false)};g.appendChild(b)});p.appendChild(g)});
+  p.appendChild(h("div",{className:"xfoot"},[h("span",{className:"xmsg"}),h("button",{type:"button",className:"btn big",text:"Close",onclick:function(){m.hidden=true}})]))}
+function pdfReady(blob,fname){var m=$("mmodal"),p=$("mpanel");m.hidden=false;p.textContent="";var file=null;try{file=new File([blob],fname,{type:"application/pdf"})}catch(_){}
+  var canShare=false;try{canShare=!!(file&&navigator.canShare&&navigator.canShare({files:[file]}))}catch(_){}
+  function row(icon,t,sub,fn){var b=h("button",{type:"button",className:"mrow",html:icon},[h("span",{},[h("b",{text:t}),h("small",{text:sub})])]);b.onclick=fn;return b}
+  p.appendChild(h("h2",{text:"Your briefing PDF is ready"}));p.appendChild(h("p",{className:"jnote",style:"margin:-6px 0 0",text:fname+" · "+Math.max(1,Math.round(blob.size/1024))+" KB"}));
+  var r=h("div",{className:"mrows"}),msg=h("span",{className:"xmsg"});
+  if(canShare)r.appendChild(row(ico("dl"),"Save to Files or share","Pick Save to Files, WhatsApp, AirDrop, Mail…",function(){navigator.share({files:[file],title:fname}).then(function(){msg.textContent="Done."},function(e){if(!e||e.name!=="AbortError")msg.textContent="Sharing didn’t work. Try Open the PDF instead."})}));
+  r.appendChild(row(svgI('<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" '+S+'/>'),"Open the PDF","Opens it in a new tab. Tap the share button there, then Save to Files.",function(){var u=URL.createObjectURL(blob),w=window.open(u,"_blank");if(!w)location.href=u}));
+  p.appendChild(r);p.appendChild(h("div",{className:"xfoot"},[msg,h("button",{type:"button",className:"btn big",text:"Close",onclick:function(){m.hidden=true}})]))}
 function menuSheet(){var m=$("mmodal"),p=$("mpanel");m.hidden=false;p.textContent="";var seen=0;try{seen=+localStorage.getItem("geroh-feed-seen")||0}catch(_){}
   var nNew=feedNow().filter(function(f){return f.at>seen&&f.uid!==fbUid}).length;
   function row(icon,t,sub,fn,count){var b=h("button",{type:"button",className:"mrow",html:icon},[h("span",{},[h("b",{text:t}),h("small",{text:sub})])]);if(count)b.appendChild(h("span",{className:"mct",text:String(count)}));b.onclick=function(){m.hidden=true;fn()};return b}
@@ -2193,6 +2213,7 @@ async function doExport(opts){opts=opts&&opts.snap?opts:{};if(exporting)return;
     var blob=doc.output("blob"),fname="Sungai-Geroh-briefing-"+now.toISOString().slice(0,10)+".pdf";window.__lastPdf=blob;
     if(!opts.snap){var tot2={race:0,safety:0,hazard:0};items.forEach(function(it){var t=TYPE[it.type];if(t&&tot2[t.fam]!=null)tot2[t.fam]++});
       saveReport({at:now.getTime(),by:byName,brief:Object.assign({},brief),counts:{race:tot2.race,safety:tot2.safety,hazard:hazCount(),wps:wps.size,ink:ink.size,photos:photoCount()},snap:makeSnap()})}
+    if(!dl&&window.matchMedia&&matchMedia("(pointer:coarse)").matches){pdfReady(blob,fname);setXmsg("PDF ready");return}
     if(!dl){try{var u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=fname;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000);setXmsg("Downloaded "+fname)}
       catch(_){setXmsg("The PDF is ready, but this view can't save files.")}return}
     setXmsg("Confirm the download…");await dl.save({filename:fname,data:blob});setXmsg("Saved "+fname);
