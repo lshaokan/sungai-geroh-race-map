@@ -994,9 +994,9 @@ function drawCluster(grp){var cx=0,cy=0;grp.forEach(function(o){cx+=o.x;cy+=o.y}
   posEls.push({el:g,x:cx,y:cy,kind:"item"})}
 function newId(p){return (p||"i")+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function body(it){var o={type:it.type,x:it.x,y:it.y,label:it.label||"",color:it.color||"",side:it.side||""};if(it.rep)o.rep=it.rep;if(it.photo)o.photo=it.photo;if(it.photos&&it.photos.length)o.photos=it.photos.slice();if(it.locked)o.locked=true;if(it.cr)o.cr=it.cr;if(it.tm)o.tm=it.tm;return o}
-function mkCr(){var c={by:myName||"Someone",at:Date.now()};if(fbUid)c.uid=fbUid;if(myDept)c.dept=myDept;return c}
+function mkCr(){var c={by:myName||"Someone",at:Date.now()};if(fbUid)c.uid=fbUid;if(myDept)c.dept=myDept;if(myPk)c.pk=myPk;return c}
 var TIMED={start:1,finish:1,tube:1,station:1,boat:1,truck:1,ambulance:1,firstaid:1,marshal:1};
-function cleanCr(r){if(!r||typeof r!=="object")return undefined;var at=num(r.at,0);if(!at)return undefined;var c={by:typeof r.by==="string"&&r.by.trim()?r.by.slice(0,30):"Someone",at:at};if(typeof r.uid==="string"&&r.uid)c.uid=r.uid.slice(0,128);if(typeof r.dept==="string"&&r.dept)c.dept=r.dept.slice(0,40);return c}
+function cleanCr(r){if(!r||typeof r!=="object")return undefined;var at=num(r.at,0);if(!at)return undefined;var c={by:typeof r.by==="string"&&r.by.trim()?r.by.slice(0,30):"Someone",at:at};if(typeof r.uid==="string"&&r.uid)c.uid=r.uid.slice(0,128);if(typeof r.dept==="string"&&r.dept)c.dept=r.dept.slice(0,40);if(typeof r.pk==="string"&&r.pk)c.pk=r.pk.slice(0,120);return c}
 function cleanTm(v){return typeof v==="string"&&/^([01]\d|2[0-3]):[0-5]\d$/.test(v)?v:undefined}
 function putItem(it,noUndo,prev){items.set(it.id,it);store("items",it.id,body(it));renderItems();if(sel&&sel.id===it.id)renderCard()}
 function placeItem(type,w){var t=TYPE[type];if(!t||!canWrite)return;var sp=snap(w.x,w.y);
@@ -1874,8 +1874,12 @@ function isAdminMe(){return myRole==="admin"||!fbFs}
 /* Who may change what: viewers nothing, editors only what they put down, admins everything.
    whyNot() with no argument asks about adding new things or shared notes. */
 function ownerUid(o){var c=o&&o.cr;return c&&c.uid||""}
-var myLead="";/* department this person leads (set by an admin), or "" */
-function whyNot(o){if(!fbFs)return null;if(!canWrite)return"view";if(o===undefined||myRole==="admin")return null;var u=ownerUid(o);if(u&&u===fbUid)return null;
+var myLead="",myPk="";
+/* the same first name, last name and department count as the same person on every device */
+function slugPart(t){return String(t||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"")}
+function personKey(first,last,dept){var a=slugPart(first),b=slugPart(last),c=slugPart(dept);return a&&b&&c?(a+"_"+b+"_"+c).slice(0,120):""}
+function pkOfMember(v){if(!v)return"";if(typeof v.pk==="string"&&v.pk)return v.pk;var f=v.first,l=v.last;if(!f||!l){var sp=String(v.name||"").trim().split(/\s+/);f=f||sp[0];l=l||sp.slice(1).join(" ")}return personKey(f,l,v.dept)}/* department this person leads (set by an admin), or "" */
+function whyNot(o){if(!fbFs)return null;if(!canWrite)return"view";if(o===undefined||myRole==="admin")return null;var u=ownerUid(o);if(u&&u===fbUid)return null;if(myPk&&o&&o.cr&&o.cr.pk===myPk)return null;
   if(myLead&&o&&o.cr&&o.cr.dept===myLead)return null;return"own"}
 var DENY={view:["Log in to edit",""],own:["You can only edit what you put down","For full edit access, log in as an admin."],ownL:["You can edit what you or your department put down","This was put down by someone in another department. For full edit access, log in as an admin."],unlock:["Only admins can unlock this","For full edit access, log in as an admin."],locked:["This is locked","Only admins can unlock it."],lockedA:["This is locked","Unlock it from its card to move or remove it."]};
 var denyT=0,pingT=0,lastPt=null;
@@ -2355,10 +2359,13 @@ function logAct(act,what,wh,key,ref,ic){if(!fbFs||!fbUid||myRole==="viewer")retu
 var cmCount={},cmSub=null,cmDraft={};
 function cmN(key){return Math.max(0,+cmCount[key]||0)}
 function cmBadge(n,x,y,k){return '<g class="cmb" transform="translate('+x+','+y+')'+(k?' scale('+k+')':'')+'"><path d="M-8.5-7h17a2.5 2.5 0 0 1 2.5 2.5v6.5a2.5 2.5 0 0 1-2.5 2.5H-.5l-4.5 4V4.5h-3.5A2.5 2.5 0 0 1-11 2v-6.5A2.5 2.5 0 0 1-8.5-7z" fill="#7b2cbf" stroke="#fff" stroke-width="1.4"/><text y="2.4" text-anchor="middle" fill="#fff" style="font:700 8px var(--map)">'+(n>9?"9+":n)+'</text></g>'}
-function watchLead(){if(!fbFs||!fbUid)return;fbFs.doc("leads/"+fbUid).onSnapshot(function(d){var nd=d.exists?String((d.data()||{}).dept||""):"";if(nd===myLead)return;myLead=nd;renderAcct();renderCard()},function(){})}
+var leadOff=null;
+function watchLead(){if(leadOff){leadOff();leadOff=null}if(!fbFs||!myPk){if(myLead){myLead="";renderAcct()}return}
+  leadOff=fbFs.doc("leads/"+myPk).onSnapshot(function(d){var nd=d.exists?String((d.data()||{}).dept||""):"";if(nd===myLead)return;myLead=nd;renderAcct();renderCard()},function(){})}
 /* things put down before departments were recorded: an admin's device fills in the department from the member list, once */
-function backfillDept(){if(!fbFs||myRole!=="admin")return;fbFs.collection("members").get().then(function(sn){var dep={};sn.forEach(function(d){var v=d.data()||{};if(v.dept)dep[d.id]=v.dept});var n=0;
-  [["items",items],["waypoints",wps],["ink",ink]].forEach(function(p){p[1].forEach(function(o,id){var c=o&&o.cr;if(!c||c.dept||!c.uid||!dep[c.uid]||n>=200)return;n++;c.dept=dep[c.uid];fbFs.doc(p[0]+"/"+id).update({"cr.dept":dep[c.uid]}).catch(function(){})})})},function(){})}
+function backfillDept(){if(!fbFs||myRole!=="admin")return;fbFs.collection("members").get().then(function(sn){var dep={},pks={};sn.forEach(function(d){var v=d.data()||{};if(v.dept)dep[d.id]=v.dept;var k=pkOfMember(v);if(k)pks[d.id]=k});var n=0;
+  [["items",items],["waypoints",wps],["ink",ink]].forEach(function(p){p[1].forEach(function(o,id){var c=o&&o.cr;if(!c||!c.uid||n>=300)return;var up={};if(!c.dept&&dep[c.uid]){up["cr.dept"]=dep[c.uid];c.dept=dep[c.uid]}if(!c.pk&&pks[c.uid]){up["cr.pk"]=pks[c.uid];c.pk=pks[c.uid]}
+    if(!Object.keys(up).length)return;n++;fbFs.doc(p[0]+"/"+id).update(up).catch(function(){})})})},function(){})}
 function startComments(){if(!fbFs)return;fbFs.collection("ccount").doc("all").onSnapshot(function(d){var n=(d.exists&&d.data().n)||{};var ch=JSON.stringify(n)!==JSON.stringify(cmCount);cmCount=n;if(ch){renderItems();renderPins();cmPaint()}},function(){})}
 function cmBump(key,v){if(!fbFs)return;var o={};o[key]=v;fbFs.collection("ccount").doc("all").set({n:o},{merge:true}).catch(function(){})}
 function cmWatch(key){if(cmSub&&cmSub.key===key)return cmSub;cmStop();var me=cmSub={key:key,list:null,off:null};
@@ -2516,7 +2523,8 @@ async function startFirebase(){var B="https://www.gstatic.com/firebasejs/10.12.2
     try{await fbFs.enablePersistence({synchronizeTabs:true})}catch(_){}
     var cred=await firebase.auth().signInAnonymously();fbUid=cred.user.uid;
     var mem=null;try{mem=await fbFs.doc("members/"+fbUid).get()}catch(_){}
-    if(mem&&mem.exists){var md=mem.data()||{};myRole=md.role==="admin"?"admin":"editor";if(typeof md.name==="string"&&md.name)myName=md.name.slice(0,40);if(typeof md.dept==="string")myDept=md.dept.slice(0,40)}else myRole="viewer";
+    if(mem&&mem.exists){var md=mem.data()||{};myRole=md.role==="admin"?"admin":"editor";if(typeof md.name==="string"&&md.name)myName=md.name.slice(0,40);if(typeof md.dept==="string")myDept=md.dept.slice(0,40);
+      myPk=pkOfMember(md);if(myPk&&md.pk!==myPk)fbFs.doc("members/"+fbUid).update({pk:myPk}).catch(function(){})}else myRole="viewer";
     setWrite(myRole!=="viewer");startShared(fbFs);startComments();startFeed();watchLead();if(myRole==="admin")setTimeout(backfillDept,6000);logVisit();handleInvite();
   }catch(e){setStatus("Offline · on this device","warn")}}
 function setWrite(ok){canWrite=ok;if(!ok){setArmed(null);setTool(null)}renderTray();updUndo();renderCard();setStatus(ok?"Live":"View only",ok?"ok":"warn");renderAcct()}
@@ -2546,8 +2554,8 @@ function joinSheet(mode,code){if(!fbFs)return;mode=mode==="admin"?"admin":"edito
   go2.onclick=async function(){var f1=tidyName(fn.value),l1=tidyName(ln.value),n=f1+" "+l1,d=dp.value,c=cd?cd.value.trim():"",bad=[],why=[];
     if(!hasLetter(f1)){bad.push(fn);why.push("your first name")}if(!hasLetter(l1)){bad.push(ln);why.push("your last name")}if(!d){bad.push(dp);why.push("your department")}if(cd&&!c){bad.push(cd);why.push("the admin code")}
     if(bad.length){buzz(bad);msg.textContent="Add "+why.join(", ").replace(/, ([^,]*)$/," and $1")+".";bad[0].focus();return}fn.value=f1;ln.value=l1;
-    go2.disabled=true;msg.textContent="Logging in…";var data={name:n,first:f1,last:l1,dept:d,role:mode,at:Date.now(),dev:devName()};if(cd)data.code=c;
-    try{await fbFs.doc("members/"+fbUid).set(data);var was=myRole;myRole=mode;myName=n;myDept=d;
+    go2.disabled=true;msg.textContent="Logging in…";var pk=personKey(f1,l1,d),data={name:n,first:f1,last:l1,dept:d,role:mode,at:Date.now(),dev:devName()};if(pk)data.pk=pk;if(cd)data.code=c;
+    try{await fbFs.doc("members/"+fbUid).set(data);var was=myRole;myRole=mode;myName=n;myDept=d;myPk=pk;watchLead();
       try{localStorage.setItem("geroh-name",n);localStorage.setItem("geroh-dept",d)}catch(_){}
       m.hidden=true;setWrite(true);logAct(mode==="admin"?(was==="editor"?"became admin":"joined as admin"):"joined","","");
       showHint(ico("ok"),mode==="admin"?"You're in as admin":"You're in. Changes you make are shared with the team.",false);
@@ -2573,7 +2581,7 @@ function accountSheet(){if(!fbFs)return;var m=$("jmodal");m.hidden=false;var pnl
   pnl.appendChild(h("div",{className:"xfoot"},[h("span",{className:"xmsg"}),h("button",{type:"button",className:"btn big",text:"Close",onclick:function(){m.hidden=true}})]))}
 async function logout(){if(!fbFs||!fbUid)return;var m=$("jmodal");try{await logAct("logged out","","");await fbFs.doc("members/"+fbUid).delete()}
   catch(e){var x=$("jpanel").querySelector(".xmsg");if(x)x.textContent="Couldn't log out. Try again when you have signal.";return}
-  myRole="viewer";m.hidden=true;setWrite(false);showHint(ico("ok"),"Logged out. This device is view only.",false)}
+  myRole="viewer";myPk="";myLead="";m.hidden=true;setWrite(false);showHint(ico("ok"),"Logged out. This device is view only.",false)}
 /* deleting something someone else added asks first */
 function okToDelete(o,label){var c=o&&o.cr;if(!c||!fbFs)return true;var mine=c.uid?c.uid===fbUid:(c.by===myName);if(mine)return true;
   return window.confirm(label+" was added by "+c.by+" at "+fmtCr(c.at)+". Delete it anyway?\n\nIt goes to Recently deleted, where anyone can bring it back.")}
@@ -2600,7 +2608,7 @@ async function openAdmin(){if(myRole!=="admin"||!fbFs)return;var m=$("amodal");m
   pnl.appendChild(h("div",{className:"chead"},[h("h2",{text:"Admin",style:"flex:1;margin:0"}),h("button",{type:"button",className:"ib","aria-label":"Close",html:ico("close"),onclick:function(){m.hidden=true}})]));
   pnl.appendChild(tabs);pnl.appendChild(body2);
   var L=[],V=[],M=[],LD={};try{var r=await Promise.all([fbFs.collection("log").orderBy("at","desc").limit(500).get(),fbFs.collection("visits").orderBy("at","desc").limit(2000).get(),fbFs.collection("members").get(),fbFs.collection("leads").get().catch(function(){return{forEach:function(){}}})]);
-    r[0].forEach(function(d){L.push(d.data()||{})});r[1].forEach(function(d){V.push(d.data()||{})});r[2].forEach(function(d){var v=d.data()||{};v.uid=d.id;M.push(v)});r[3].forEach(function(d){LD[d.id]=(d.data()||{}).dept||""})}
+    r[0].forEach(function(d){L.push(d.data()||{})});r[1].forEach(function(d){V.push(d.data()||{})});r[2].forEach(function(d){var v=d.data()||{};v.uid=d.id;M.push(v)});r[3].forEach(function(d){LD[d.id]=(d.data()||{}).dept||""});M.forEach(function(v){v.pk=pkOfMember(v)})}
   catch(e){body2.textContent="";body2.appendChild(h("p",{className:"jnote",text:"Couldn't load the logs. Check your signal, or that the database rules are up to date."}));return}
   function when(t){var d=new Date(num(t,0)),p2=function(n){return(n<10?"0":"")+n};return d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})+" "+p2(d.getHours())+":"+p2(d.getMinutes())}
   function who(v){return(v.name||"Someone")+(v.dept?" ("+v.dept+")":"")}
@@ -2619,17 +2627,19 @@ async function openAdmin(){if(myRole!=="admin"||!fbFs)return;var m=$("amodal");m
       box2.appendChild(h("h3",{text:"Recent visits",style:"margin:4px 0 -6px;font-size:14px"}));
       box2.appendChild(table(["When","Who","Device"],V.slice(0,150).map(function(v){return[{t:when(v.at),c:"mut"},v.name?who(v)+(v.role==="admin"?" · admin":""):"Visitor",v.dev||""]})));return box2},
     People:function(){var box2=h("div",{style:"display:flex;flex-direction:column;gap:14px"}),ch={};L.forEach(function(v){if(v.uid)ch[v.uid]=(ch[v.uid]||0)+1});
-      var ms=M.slice().sort(function(a,b){return(a.dept||"").localeCompare(b.dept||"")||(a.name||"").localeCompare(b.name||"")});
-      function leadBtn(v){if(v.role==="admin")return"";var on=!!LD[v.uid],b=h("button",{type:"button",className:"btn"+(on?" primary":""),style:"height:34px;padding:0 10px;font-size:13px",text:on?"Lead ✓":"Make lead"});
-        b.title=on?"Leads "+LD[v.uid]+". Tap to remove.":(v.dept?"Let "+(v.name||"them")+" edit everything "+v.dept+" put down":"Needs a department first");if(!v.dept&&!on)b.disabled=true;
-        b.onclick=function(){b.disabled=true;var p2=on?fbFs.doc("leads/"+v.uid).delete():fbFs.doc("leads/"+v.uid).set({dept:v.dept,name:v.name||"",by:myName||"",at:Date.now()});
-          p2.then(function(){if(on)delete LD[v.uid];else LD[v.uid]=v.dept;logAct(on?"removed lead":"made lead",(v.name||"Someone")+" · "+(v.dept||""),"");show("People")},function(){b.disabled=false;b.textContent="Couldn't save";b.title="Check the database rules are up to date"})};return b}
-      box2.appendChild(table(["Name","Department","Role","Joined","Changes","Department lead"],ms.map(function(v){return[v.name||"?",v.dept||"",v.role==="admin"?"Admin":LD[v.uid]?"Lead":"Editor",{t:v.at?when(v.at):"",c:"mut"},{t:ch[v.uid]||0,c:"n"},leadBtn(v)]})));
+      var byP={},ms=[];M.forEach(function(v){var k=v.pk||("uid:"+v.uid);if(!byP[k]){byP[k]={name:v.name,dept:v.dept,role:v.role,at:v.at||0,pk:v.pk,uids:[],devs:0};ms.push(byP[k])}var g=byP[k];g.uids.push(v.uid);g.devs++;if(v.role==="admin")g.role="admin";if((v.at||0)>g.at)g.at=v.at});
+      ms.forEach(function(g){g.changes=g.uids.reduce(function(a,u){return a+(ch[u]||0)},0)});
+      ms.sort(function(a,b){return(a.dept||"").localeCompare(b.dept||"")||(a.name||"").localeCompare(b.name||"")});
+      function leadBtn(v){if(v.role==="admin"||!v.pk)return"";var on=!!LD[v.pk],b=h("button",{type:"button",className:"btn"+(on?" primary":""),style:"height:34px;padding:0 10px;font-size:13px",text:on?"Lead ✓":"Make lead"});
+        b.title=on?"Leads "+LD[v.pk]+". Tap to remove.":(v.dept?"Let "+(v.name||"them")+" edit everything "+v.dept+" put down":"Needs a department first");if(!v.dept&&!on)b.disabled=true;
+        b.onclick=function(){b.disabled=true;var p2=on?fbFs.doc("leads/"+v.pk).delete():fbFs.doc("leads/"+v.pk).set({dept:v.dept,name:v.name||"",by:myName||"",at:Date.now()});
+          p2.then(function(){if(on)delete LD[v.pk];else LD[v.pk]=v.dept;logAct(on?"removed lead":"made lead",(v.name||"Someone")+" · "+(v.dept||""),"");show("People")},function(){b.disabled=false;b.textContent="Couldn't save";b.title="Check the database rules are up to date"})};return b}
+      box2.appendChild(table(["Name","Department","Role","Devices","Last joined","Changes","Department lead"],ms.map(function(v){return[v.name||"?",v.dept||"",v.role==="admin"?"Admin":LD[v.pk]?"Lead":"Editor",{t:v.devs,c:"n"},{t:v.at?when(v.at):"",c:"mut"},{t:v.changes,c:"n"},leadBtn(v)]})));
       box2.appendChild(h("p",{className:"jnote",text:"A department lead can move, edit or remove anything put down by people in their department, as well as their own things. Only admins can unlock things or change everything."}));
       var bd={};M.forEach(function(v){var k=v.dept||"No department";bd[k]=(bd[k]||0)+1});
       box2.appendChild(h("h3",{text:"By department",style:"margin:4px 0 -6px;font-size:14px"}));
       box2.appendChild(table(["Department","People"],Object.keys(bd).sort(function(a,b){return bd[b]-bd[a]}).map(function(k){return[k,{t:bd[k],c:"n"}]})));
-      box2.appendChild(h("p",{className:"jnote",text:"Joined is when they last registered on that device. Logging out removes them from this list; their log entries stay."}));return box2}};
+      box2.appendChild(h("p",{className:"jnote",text:"People with the same first name, last name and department count as one person on all their devices. Logging out on a device removes that device; their log entries stay."}));return box2}};
   function show(k){tabs.querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",String(b.textContent===k))});body2.textContent="";body2.appendChild(views[k]())}
   Object.keys(views).forEach(function(k){var b=h("button",{type:"button",role:"tab",text:k});b.onclick=function(){show(k)};tabs.appendChild(b)});show("Activity")}
 
