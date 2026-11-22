@@ -197,7 +197,7 @@ button:disabled{cursor:default}
 @media (prefers-reduced-motion:reduce){.nope,.zap{animation:none}.mebtn.ping::after{animation:none;transform:translate(-50%,-50%)}}
 .jnames{display:grid;grid-template-columns:1fr 1fr;gap:10px}.jnames .inp{min-width:0;width:100%;box-sizing:border-box}
 .jnote{font-size:12px;color:var(--muted);margin:-4px 0 0}.jlink{border:0;background:none;color:#1b4fd8;font:600 14px var(--map);padding:8px 0;align-self:flex-start;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
-.who{display:flex;align-items:center;gap:12px}.who b{font-size:17px}.who small{color:var(--muted);font-size:13px}.rolebadge{font:700 11px var(--map);text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:999px;background:#eef1f6;color:#5b6573}.rolebadge.admin{background:#111418;color:#fff}
+.rolebadge.lead{background:#1b4fd8!important;color:#fff!important}.who{display:flex;align-items:center;gap:12px}.who b{font-size:17px}.who small{color:var(--muted);font-size:13px}.rolebadge{font:700 11px var(--map);text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:999px;background:#eef1f6;color:#5b6573}.rolebadge.admin{background:#111418;color:#fff}
 .acts{display:flex;flex-direction:column;gap:8px}.acts .btn{justify-content:flex-start}
 .atabs{display:flex;gap:6px;flex-wrap:wrap}.atabs button{border:0;border-radius:999px;padding:8px 14px;background:#f1f3f7;font:600 13.5px var(--map);cursor:pointer}.atabs button[aria-pressed="true"]{background:#111418;color:#fff}
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.tile{background:#f4f6f9;border-radius:12px;padding:10px 12px}.tile b{display:block;font:700 24px var(--map);font-variant-numeric:tabular-nums}.tile small{color:var(--muted);font-size:12px}
@@ -994,9 +994,9 @@ function drawCluster(grp){var cx=0,cy=0;grp.forEach(function(o){cx+=o.x;cy+=o.y}
   posEls.push({el:g,x:cx,y:cy,kind:"item"})}
 function newId(p){return (p||"i")+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function body(it){var o={type:it.type,x:it.x,y:it.y,label:it.label||"",color:it.color||"",side:it.side||""};if(it.rep)o.rep=it.rep;if(it.photo)o.photo=it.photo;if(it.photos&&it.photos.length)o.photos=it.photos.slice();if(it.locked)o.locked=true;if(it.cr)o.cr=it.cr;if(it.tm)o.tm=it.tm;return o}
-function mkCr(){var c={by:myName||"Someone",at:Date.now()};if(fbUid)c.uid=fbUid;return c}
+function mkCr(){var c={by:myName||"Someone",at:Date.now()};if(fbUid)c.uid=fbUid;if(myDept)c.dept=myDept;return c}
 var TIMED={start:1,finish:1,tube:1,station:1,boat:1,truck:1,ambulance:1,firstaid:1,marshal:1};
-function cleanCr(r){if(!r||typeof r!=="object")return undefined;var at=num(r.at,0);if(!at)return undefined;var c={by:typeof r.by==="string"&&r.by.trim()?r.by.slice(0,30):"Someone",at:at};if(typeof r.uid==="string"&&r.uid)c.uid=r.uid.slice(0,128);return c}
+function cleanCr(r){if(!r||typeof r!=="object")return undefined;var at=num(r.at,0);if(!at)return undefined;var c={by:typeof r.by==="string"&&r.by.trim()?r.by.slice(0,30):"Someone",at:at};if(typeof r.uid==="string"&&r.uid)c.uid=r.uid.slice(0,128);if(typeof r.dept==="string"&&r.dept)c.dept=r.dept.slice(0,40);return c}
 function cleanTm(v){return typeof v==="string"&&/^([01]\d|2[0-3]):[0-5]\d$/.test(v)?v:undefined}
 function putItem(it,noUndo,prev){items.set(it.id,it);store("items",it.id,body(it));renderItems();if(sel&&sel.id===it.id)renderCard()}
 function placeItem(type,w){var t=TYPE[type];if(!t||!canWrite)return;var sp=snap(w.x,w.y);
@@ -1874,11 +1874,13 @@ function isAdminMe(){return myRole==="admin"||!fbFs}
 /* Who may change what: viewers nothing, editors only what they put down, admins everything.
    whyNot() with no argument asks about adding new things or shared notes. */
 function ownerUid(o){var c=o&&o.cr;return c&&c.uid||""}
-function whyNot(o){if(!fbFs)return null;if(!canWrite)return"view";if(o===undefined||myRole==="admin")return null;var u=ownerUid(o);return u&&u===fbUid?null:"own"}
-var DENY={view:["Log in to edit",""],own:["You can only edit what you put down","For full edit access, log in as an admin."],unlock:["Only admins can unlock this","For full edit access, log in as an admin."],locked:["This is locked","Only admins can unlock it."],lockedA:["This is locked","Unlock it from its card to move or remove it."]};
+var myLead="";/* department this person leads (set by an admin), or "" */
+function whyNot(o){if(!fbFs)return null;if(!canWrite)return"view";if(o===undefined||myRole==="admin")return null;var u=ownerUid(o);if(u&&u===fbUid)return null;
+  if(myLead&&o&&o.cr&&o.cr.dept===myLead)return null;return"own"}
+var DENY={view:["Log in to edit",""],own:["You can only edit what you put down","For full edit access, log in as an admin."],ownL:["You can edit what you or your department put down","This was put down by someone in another department. For full edit access, log in as an admin."],unlock:["Only admins can unlock this","For full edit access, log in as an admin."],locked:["This is locked","Only admins can unlock it."],lockedA:["This is locked","Unlock it from its card to move or remove it."]};
 var denyT=0,pingT=0,lastPt=null;
 function ro(el,why){if(why&&el){el.setAttribute("data-deny",why);el.classList.add("ro");if(el.tagName==="INPUT"||el.tagName==="TEXTAREA")el.readOnly=true}return el}
-function deny(why,el,pt){if(why==="locked"&&isAdminMe())why="lockedA";var d=DENY[why]||DENY.view;try{if(navigator.vibrate)navigator.vibrate([40,40,40])}catch(_){}
+function deny(why,el,pt){if(why==="locked"&&isAdminMe())why="lockedA";if(why==="own"&&myLead)why="ownL";var d=DENY[why]||DENY.view;try{if(navigator.vibrate)navigator.vibrate([40,40,40])}catch(_){}
   if(riverOn){if(why==="view")joinSheet("editor");else rvToast(d[0]+". "+d[1],false);return}
   var app=$("app"),a=app.getBoundingClientRect(),r=null;
   if(el&&el instanceof SVGElement){var se=el,n=0;clearInterval(se._nf);clearInterval(se._sh);if(se._t0!=null&&(se.getAttribute("transform")||"").indexOf(se._t0)===0)se.setAttribute("transform",se._t0);
@@ -2323,7 +2325,7 @@ function setStatus(text,cls){var s=$("status");if(fbFs&&!canWrite&&/^(Live|Live 
 function renderAcct(){var b=$("bMe");if(!b)return;if(!fbFs){b.hidden=true;return}b.hidden=false;b.textContent="";
   if(!canWrite){b.className="xbtn mebtn";b.innerHTML=ico("pen")+"<span>Log in</span>";b.title="Log in to add or change things";b.setAttribute("aria-label","Log in to add or change things");return}
   var nm=(myName||"You").trim(),av=h("i",{className:"av",text:(nm.charAt(0)||"?").toUpperCase()});
-  b.className="xbtn mebtn on"+(myRole==="admin"?" admin":"");b.appendChild(av);b.appendChild(h("span",{text:nm.split(/\s+/)[0].slice(0,14)+(myRole==="admin"?" · admin":"")}));
+  b.className="xbtn mebtn on"+(myRole==="admin"?" admin":"");b.appendChild(av);b.appendChild(h("span",{text:nm.split(/\s+/)[0].slice(0,14)+(myRole==="admin"?" · admin":myLead?" · lead":"")}));
   b.title=nm+(myDept?" ("+myDept+")":"")+(myRole==="admin"?", admin":"")+": tap for your account";b.setAttribute("aria-label","Your account: "+nm)}
 function saveLocal(){try{var o={items:[],notes:notes,ink:[],wps:[],mo:mo,brief:brief};items.forEach(function(it){var b=body(it);b.id=it.id;o.items.push(b)});ink.forEach(function(d,id){o.ink.push([id,d])});wps.forEach(function(w,id){o.wps.push([id,wpBody(w)])});localStorage.setItem(KEY,JSON.stringify(o))}catch(_){}}
 function loadLocal(){try{var d=JSON.parse(localStorage.getItem(KEY)||"null");if(!d)return;(d.items||[]).forEach(function(it){var v=cleanItem(it.id,it);if(v)items.set(v.id,v)});notes=d.notes||{};
@@ -2353,6 +2355,10 @@ function logAct(act,what,wh,key,ref,ic){if(!fbFs||!fbUid||myRole==="viewer")retu
 var cmCount={},cmSub=null,cmDraft={};
 function cmN(key){return Math.max(0,+cmCount[key]||0)}
 function cmBadge(n,x,y,k){return '<g class="cmb" transform="translate('+x+','+y+')'+(k?' scale('+k+')':'')+'"><path d="M-8.5-7h17a2.5 2.5 0 0 1 2.5 2.5v6.5a2.5 2.5 0 0 1-2.5 2.5H-.5l-4.5 4V4.5h-3.5A2.5 2.5 0 0 1-11 2v-6.5A2.5 2.5 0 0 1-8.5-7z" fill="#7b2cbf" stroke="#fff" stroke-width="1.4"/><text y="2.4" text-anchor="middle" fill="#fff" style="font:700 8px var(--map)">'+(n>9?"9+":n)+'</text></g>'}
+function watchLead(){if(!fbFs||!fbUid)return;fbFs.doc("leads/"+fbUid).onSnapshot(function(d){var nd=d.exists?String((d.data()||{}).dept||""):"";if(nd===myLead)return;myLead=nd;renderAcct();renderCard()},function(){})}
+/* things put down before departments were recorded: an admin's device fills in the department from the member list, once */
+function backfillDept(){if(!fbFs||myRole!=="admin")return;fbFs.collection("members").get().then(function(sn){var dep={};sn.forEach(function(d){var v=d.data()||{};if(v.dept)dep[d.id]=v.dept});var n=0;
+  [["items",items],["waypoints",wps],["ink",ink]].forEach(function(p){p[1].forEach(function(o,id){var c=o&&o.cr;if(!c||c.dept||!c.uid||!dep[c.uid]||n>=200)return;n++;c.dept=dep[c.uid];fbFs.doc(p[0]+"/"+id).update({"cr.dept":dep[c.uid]}).catch(function(){})})})},function(){})}
 function startComments(){if(!fbFs)return;fbFs.collection("ccount").doc("all").onSnapshot(function(d){var n=(d.exists&&d.data().n)||{};var ch=JSON.stringify(n)!==JSON.stringify(cmCount);cmCount=n;if(ch){renderItems();renderPins();cmPaint()}},function(){})}
 function cmBump(key,v){if(!fbFs)return;var o={};o[key]=v;fbFs.collection("ccount").doc("all").set({n:o},{merge:true}).catch(function(){})}
 function cmWatch(key){if(cmSub&&cmSub.key===key)return cmSub;cmStop();var me=cmSub={key:key,list:null,off:null};
@@ -2400,7 +2406,7 @@ function iconHtml(key,size){size=size||34;if(!key)return"";var c0=key.slice(0,2)
   if(c0==="m:"){var m=markById(id);if(m)return'<svg viewBox="-16 -16 32 32" width="'+size+'" height="'+size+'">'+markGlyph(m)+'</svg>'}
   if(key==="ink")return'<span class="fsq">'+ico("pen")+'</span>';
   if(key.indexOf("sec:")===0){var s2=byId(key.slice(4));if(s2)return'<span class="fsq fsec">'+s2.n+'</span>'}return""}
-function feedWrite(act,what,wh,ref,now,ic){if(!fbFs||/^(joined|became admin|logged out)/.test(act))return;
+function feedWrite(act,what,wh,ref,now,ic){if(!fbFs||/^(joined|became admin|logged out|made lead|removed lead)/.test(act))return;
   fbFs.collection("feed").add({uid:fbUid,name:myName||"Someone",dept:myDept||"",at:now,act:act,what:String(what||"").slice(0,90),where:String(wh||"").slice(0,40),ref:String(ref||"").slice(0,120),ic:String(ic||iconKey(ref)).slice(0,60)}).catch(function(){})}
 function startFeed(){if(!fbFs)return;$("bFeed").hidden=false;if(feedOff)feedOff();var since=Date.now()-FEED_H*3600e3;
   feedOff=fbFs.collection("feed").where("at",">=",since).orderBy("at","desc").limit(150).onSnapshot(function(sn){feed=sn.docs.map(function(d){var v=d.data();return{id:d.id,uid:String(v.uid||""),name:String(v.name||"Someone"),dept:String(v.dept||""),at:+v.at||0,act:String(v.act||""),what:String(v.what||""),where:String(v.where||""),ref:String(v.ref||""),ic:String(v.ic||"")}});
@@ -2511,7 +2517,7 @@ async function startFirebase(){var B="https://www.gstatic.com/firebasejs/10.12.2
     var cred=await firebase.auth().signInAnonymously();fbUid=cred.user.uid;
     var mem=null;try{mem=await fbFs.doc("members/"+fbUid).get()}catch(_){}
     if(mem&&mem.exists){var md=mem.data()||{};myRole=md.role==="admin"?"admin":"editor";if(typeof md.name==="string"&&md.name)myName=md.name.slice(0,40);if(typeof md.dept==="string")myDept=md.dept.slice(0,40)}else myRole="viewer";
-    setWrite(myRole!=="viewer");startShared(fbFs);startComments();startFeed();logVisit();handleInvite();
+    setWrite(myRole!=="viewer");startShared(fbFs);startComments();startFeed();watchLead();if(myRole==="admin")setTimeout(backfillDept,6000);logVisit();handleInvite();
   }catch(e){setStatus("Offline · on this device","warn")}}
 function setWrite(ok){canWrite=ok;if(!ok){setArmed(null);setTool(null)}renderTray();updUndo();renderCard();setStatus(ok?"Live":"View only",ok?"ok":"warn");renderAcct()}
 /* ---------- Joining: view only → editor (name + department) → admin (+ admin code) ---------- */
@@ -2557,7 +2563,7 @@ function joinSheet(mode,code){if(!fbFs)return;mode=mode==="admin"?"admin":"edito
   else{var bk=h("button",{type:"button",className:"jlink",text:"Log in without admin"});bk.onclick=function(){joinSheet("editor")};if(myRole!=="editor")pnl.appendChild(bk)}
   setTimeout(function(){(!fn.value?fn:!ln.value?ln:cd&&!cd.value?cd:!dp.value?dp:go2).focus()},60)}
 function accountSheet(){if(!fbFs)return;var m=$("jmodal");m.hidden=false;var pnl=$("jpanel");pnl.textContent="";
-  pnl.appendChild(h("div",{className:"who"},[h("div",{style:"flex:1;min-width:0"},[h("b",{text:myName||"You"}),h("br"),h("small",{text:myDept||"No department"})]),h("span",{className:"rolebadge"+(myRole==="admin"?" admin":""),text:myRole==="admin"?"Admin":"Editor"})]));
+  pnl.appendChild(h("div",{className:"who"},[h("div",{style:"flex:1;min-width:0"},[h("b",{text:myName||"You"}),h("br"),h("small",{text:myDept||"No department"})]),h("span",{className:"rolebadge"+(myRole==="admin"?" admin":myLead?" lead":""),text:myRole==="admin"?"Admin":myLead?"Lead · "+myLead:"Editor"})]));
   var acts=h("div",{className:"acts"});
   if(myRole==="admin"){acts.appendChild(btn("star","Admin page: activity, visits, people",function(){m.hidden=true;openAdmin()},"primary"))}
   acts.appendChild(btn("undo","Recently deleted",function(){binSheet()}));
@@ -2593,13 +2599,13 @@ async function openAdmin(){if(myRole!=="admin"||!fbFs)return;var m=$("amodal");m
   var tabs=h("div",{className:"atabs",role:"tablist"}),body2=h("div",{},[h("p",{className:"jnote",text:"Loading…"})]);
   pnl.appendChild(h("div",{className:"chead"},[h("h2",{text:"Admin",style:"flex:1;margin:0"}),h("button",{type:"button",className:"ib","aria-label":"Close",html:ico("close"),onclick:function(){m.hidden=true}})]));
   pnl.appendChild(tabs);pnl.appendChild(body2);
-  var L=[],V=[],M=[];try{var r=await Promise.all([fbFs.collection("log").orderBy("at","desc").limit(500).get(),fbFs.collection("visits").orderBy("at","desc").limit(2000).get(),fbFs.collection("members").get()]);
-    r[0].forEach(function(d){L.push(d.data()||{})});r[1].forEach(function(d){V.push(d.data()||{})});r[2].forEach(function(d){var v=d.data()||{};v.uid=d.id;M.push(v)})}
+  var L=[],V=[],M=[],LD={};try{var r=await Promise.all([fbFs.collection("log").orderBy("at","desc").limit(500).get(),fbFs.collection("visits").orderBy("at","desc").limit(2000).get(),fbFs.collection("members").get(),fbFs.collection("leads").get().catch(function(){return{forEach:function(){}}})]);
+    r[0].forEach(function(d){L.push(d.data()||{})});r[1].forEach(function(d){V.push(d.data()||{})});r[2].forEach(function(d){var v=d.data()||{};v.uid=d.id;M.push(v)});r[3].forEach(function(d){LD[d.id]=(d.data()||{}).dept||""})}
   catch(e){body2.textContent="";body2.appendChild(h("p",{className:"jnote",text:"Couldn't load the logs. Check your signal, or that the database rules are up to date."}));return}
   function when(t){var d=new Date(num(t,0)),p2=function(n){return(n<10?"0":"")+n};return d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})+" "+p2(d.getHours())+":"+p2(d.getMinutes())}
   function who(v){return(v.name||"Someone")+(v.dept?" ("+v.dept+")":"")}
   function table(heads,rows){var t=h("table",{className:"atable"}),tr=h("tr");heads.forEach(function(x){tr.appendChild(h("th",{text:x}))});t.appendChild(h("thead",{},[tr]));var tb=h("tbody");
-    rows.forEach(function(rw){var r2=h("tr");rw.forEach(function(c){r2.appendChild(typeof c==="object"&&c?h("td",{className:c.c||"",text:String(c.t)}):h("td",{text:String(c)}))});tb.appendChild(r2)});t.appendChild(tb);return t}
+    rows.forEach(function(rw){var r2=h("tr");rw.forEach(function(c){r2.appendChild(c&&c.nodeType?h("td",{},[c]):typeof c==="object"&&c?h("td",{className:c.c||"",text:String(c.t)}):h("td",{text:String(c)}))});tb.appendChild(r2)});t.appendChild(tb);return t}
   var views={
     Activity:function(){if(!L.length)return h("p",{className:"jnote",text:"No activity yet."});
       return table(["When","Who","What"],L.map(function(v){return[{t:when(v.at),c:"mut"},who(v),(v.act||"")+(v.what?" "+v.what:"")+(v.where?" · "+v.where:"")]}))},
@@ -2614,7 +2620,12 @@ async function openAdmin(){if(myRole!=="admin"||!fbFs)return;var m=$("amodal");m
       box2.appendChild(table(["When","Who","Device"],V.slice(0,150).map(function(v){return[{t:when(v.at),c:"mut"},v.name?who(v)+(v.role==="admin"?" · admin":""):"Visitor",v.dev||""]})));return box2},
     People:function(){var box2=h("div",{style:"display:flex;flex-direction:column;gap:14px"}),ch={};L.forEach(function(v){if(v.uid)ch[v.uid]=(ch[v.uid]||0)+1});
       var ms=M.slice().sort(function(a,b){return(a.dept||"").localeCompare(b.dept||"")||(a.name||"").localeCompare(b.name||"")});
-      box2.appendChild(table(["Name","Department","Role","Joined","Changes"],ms.map(function(v){return[v.name||"?",v.dept||"",v.role==="admin"?"Admin":"Editor",{t:v.at?when(v.at):"",c:"mut"},{t:ch[v.uid]||0,c:"n"}]})));
+      function leadBtn(v){if(v.role==="admin")return"";var on=!!LD[v.uid],b=h("button",{type:"button",className:"btn"+(on?" primary":""),style:"height:34px;padding:0 10px;font-size:13px",text:on?"Lead ✓":"Make lead"});
+        b.title=on?"Leads "+LD[v.uid]+". Tap to remove.":(v.dept?"Let "+(v.name||"them")+" edit everything "+v.dept+" put down":"Needs a department first");if(!v.dept&&!on)b.disabled=true;
+        b.onclick=function(){b.disabled=true;var p2=on?fbFs.doc("leads/"+v.uid).delete():fbFs.doc("leads/"+v.uid).set({dept:v.dept,name:v.name||"",by:myName||"",at:Date.now()});
+          p2.then(function(){if(on)delete LD[v.uid];else LD[v.uid]=v.dept;logAct(on?"removed lead":"made lead",(v.name||"Someone")+" · "+(v.dept||""),"");show("People")},function(){b.disabled=false;b.textContent="Couldn't save";b.title="Check the database rules are up to date"})};return b}
+      box2.appendChild(table(["Name","Department","Role","Joined","Changes","Department lead"],ms.map(function(v){return[v.name||"?",v.dept||"",v.role==="admin"?"Admin":LD[v.uid]?"Lead":"Editor",{t:v.at?when(v.at):"",c:"mut"},{t:ch[v.uid]||0,c:"n"},leadBtn(v)]})));
+      box2.appendChild(h("p",{className:"jnote",text:"A department lead can move, edit or remove anything put down by people in their department, as well as their own things. Only admins can unlock things or change everything."}));
       var bd={};M.forEach(function(v){var k=v.dept||"No department";bd[k]=(bd[k]||0)+1});
       box2.appendChild(h("h3",{text:"By department",style:"margin:4px 0 -6px;font-size:14px"}));
       box2.appendChild(table(["Department","People"],Object.keys(bd).sort(function(a,b){return bd[b]-bd[a]}).map(function(k){return[k,{t:bd[k],c:"n"}]})));
