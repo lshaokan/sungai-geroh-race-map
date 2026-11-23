@@ -744,7 +744,7 @@ var TYPES=[
  {id:"marshal",fam:"safety",name:"Lifeguard",short:"Lifeguard"},{id:"rope",fam:"safety",name:"Throw rope",short:"Rope"},
  {id:"strainer",fam:"hazard",name:"Strainer",short:"Strainer"},{id:"debris",fam:"hazard",name:"Debris",short:"Debris"},{id:"rocks",fam:"hazard",name:"Sharp rocks",short:"Rocks"},
  {id:"wires",fam:"hazard",name:"Wires",short:"Wires"},{id:"hazard",fam:"hazard",name:"Other hazard",short:"Other"},
- {id:"waypoint",fam:"point",name:"Waypoint",short:"Waypoint"},{id:"landmark",fam:"point",name:"Landmark",short:"Landmark"},{id:"rest",fam:"point",name:"Rest point",short:"Rest"},{id:"water",fam:"point",name:"Drinking water",short:"Water"},
+ {id:"waypoint",fam:"point",name:"Waypoint",short:"Waypoint"},{id:"landmark",fam:"point",name:"Landmark",short:"Landmark"},{id:"rest",fam:"point",name:"Rest point",short:"Rest"},{id:"water",fam:"safety",name:"Drinking water",short:"Water"},
  {id:"food",fam:"point",name:"Food",short:"Food"},{id:"check",fam:"point",name:"Checkpoint",short:"Checkpoint"},{id:"photo",fam:"point",name:"Photo spot",short:"Photo"},{id:"radio",fam:"point",name:"Radio",short:"Radio"}
 ];
 var TYPE={};TYPES.forEach(function(t){TYPE[t.id]=t});
@@ -754,6 +754,7 @@ function token(t,color){
   var fc=FAM[t.fam].c,g=G[t.id]||"";
   if(t.id==="tube")return '<circle r="14" fill="#1b1b1b" stroke="#fff" stroke-width="2"/><circle r="5" fill="#f2f4f7" stroke="#fff" stroke-width="1.2"/>';
   if(t.id==="finish"){var c='<circle r="14" fill="#fff" stroke="#111418" stroke-width="1.6"/>';for(var i=0;i<4;i++)for(var j=0;j<4;j++)if((i+j)%2===0)c+='<rect x="'+(-6+i*3)+'" y="'+(-6+j*3)+'" width="3" height="3" fill="#111418"/>';return c+'<rect x="-6" y="-6" width="12" height="12" fill="none" stroke="#111418" stroke-width=".8"/>'}
+  if(t.id==="water")return '<circle r="14" fill="#1b8fd8" stroke="#fff" stroke-width="2"/>'+g;
   if(t.id==="start")return '<circle r="14" fill="#1a9a4b" stroke="#fff" stroke-width="2"/>'+g;
   if(t.id==="landmark")return '<circle r="13" fill="#fff" stroke="#e3e8ef" stroke-width="1"/><circle r="6.5" fill="#fff" stroke="#5b6573" stroke-width="2.6"/>';
   if(t.id==="waypoint")return '<path d="M0 15C-3 9-11.5 4-11.5-3.5A11.5 11.5 0 1 1 11.5-3.5C11.5 4 3 9 0 15Z" fill="'+(color||"#d7263d")+'" stroke="#fff" stroke-width="2"/><circle cy="-3.5" r="4.2" fill="#fff"/>';
@@ -795,6 +796,8 @@ function markText(m){return m.base||m.tag||m.n}
 var svg=$("map"),world=$("world"),gItems=$("gItems"),gMarks=$("gMarks"),gInk=$("gInk"),gNotes=$("gNotes"),card=$("card");
 var view={k:1,tx:0,ty:0},kfit=1,touched=false,level=1;
 var fixed=[],posEls=[],waterEls=[];
+/* text notes keep their screen size at and above the zoom they were written at, and shrink with the map below it (hidden when tiny) */
+function posScale(f,inv){if(!f.zr)return inv;var r=Math.min(1,view.k/(f.zr*kfit));if(f.el.style)f.el.style.display=r<0.22?"none":"";return inv*r}
 var items=new Map(),notes={},ink=new Map(),wps=new Map(),mo={},dragWp=null;
 var nextMini=false,cardMini=false;
 var sel=null,tab="race",tool=null,armed=null,inkColor="#111418",penSeen=false;
@@ -889,7 +892,7 @@ function apply(){
   world.setAttribute("transform","translate("+view.tx+","+view.ty+") scale("+view.k+")");
   var inv=1/view.k,i,f;
   for(i=0;i<fixed.length;i++){f=fixed[i];f.el.setAttribute("transform","translate("+f.x+","+f.y+") scale("+inv+")")}
-  for(i=0;i<posEls.length;i++){f=posEls[i];f.el.setAttribute("transform","translate("+f.x+","+f.y+") scale("+inv+")")}
+  for(i=0;i<posEls.length;i++){f=posEls[i];f.el.setAttribute("transform","translate("+f.x+","+f.y+") scale("+posScale(f,inv)+")")}
   var w=Math.max(7,5.5*inv);
   waterEls.forEach(function(we){we.el.setAttribute("stroke-width",we.kind==="water"?w:we.kind==="edge"?w+2.6*inv:w+12*inv)});
   var rel=view.k/kfit,lv=forceLevel||(rel<1.8?1:rel<4.5?2:3);
@@ -975,7 +978,7 @@ function renderItems(){
     if(!solo)arr.forEach(function(o){if(used[o.id]||(sel&&sel.kind==="item"&&sel.id===o.id)||drag===o.id)return;if(Math.hypot(o.x-it.x,o.y-it.y)<R){grp.push(o);used[o.id]=1}});
     groups.push(grp)});
   groups.forEach(function(g){if(g.length===1)drawItem(g[0]);else drawCluster(g)});
-  var inv=1/view.k;posEls.forEach(function(f){f.el.setAttribute("transform","translate("+f.x+","+f.y+") scale("+inv+")")});
+  var inv=1/view.k;posEls.forEach(function(f){f.el.setAttribute("transform","translate("+f.x+","+f.y+") scale("+posScale(f,inv)+")")});
   updCounts();renderPips();schedDeclutter();
 }
 function drawItem(it){var t=TYPE[it.type],isSel=sel&&sel.kind==="item"&&sel.id===it.id;
@@ -995,7 +998,7 @@ function drawCluster(grp){var cx=0,cy=0;grp.forEach(function(o){cx+=o.x;cy+=o.y}
 function newId(p){return (p||"i")+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function body(it){var o={type:it.type,x:it.x,y:it.y,label:it.label||"",color:it.color||"",side:it.side||""};if(it.rep)o.rep=it.rep;if(it.photo)o.photo=it.photo;if(it.photos&&it.photos.length)o.photos=it.photos.slice();if(it.locked)o.locked=true;if(it.cr)o.cr=it.cr;if(it.tm)o.tm=it.tm;return o}
 function mkCr(){var c={by:myName||"Someone",at:Date.now()};if(fbUid)c.uid=fbUid;if(myDept)c.dept=myDept;if(myPk)c.pk=myPk;return c}
-var TIMED={start:1,finish:1,tube:1,station:1,boat:1,truck:1,ambulance:1,firstaid:1,marshal:1};
+var TIMED={start:1,finish:1,tube:1,station:1,boat:1,truck:1,ambulance:1,firstaid:1,marshal:1,water:1};
 function cleanCr(r){if(!r||typeof r!=="object")return undefined;var at=num(r.at,0);if(!at)return undefined;var c={by:typeof r.by==="string"&&r.by.trim()?r.by.slice(0,30):"Someone",at:at};if(typeof r.uid==="string"&&r.uid)c.uid=r.uid.slice(0,128);if(typeof r.dept==="string"&&r.dept)c.dept=r.dept.slice(0,40);if(typeof r.pk==="string"&&r.pk)c.pk=r.pk.slice(0,120);return c}
 function cleanTm(v){return typeof v==="string"&&/^([01]\d|2[0-3]):[0-5]\d$/.test(v)?v:undefined}
 function putItem(it,noUndo,prev){items.set(it.id,it);store("items",it.id,body(it));renderItems();if(sel&&sel.id===it.id)renderCard()}
@@ -1109,7 +1112,7 @@ function drawInk(doc,id,live){
     var t=el("text",{x:0,y:4.5,"text-anchor":"middle",fill:doc.color,style:"font:700 13.5px var(--map)"},g);t.textContent=doc.text;
     var w=doc.text.length*7+4;try{w=t.getBBox().width}catch(_){}
     var rc=el("rect",{x:-w/2-9,y:-12,width:w+18,height:24,rx:8,fill:"#fff",stroke:doc.color,"stroke-width":1.6,filter:"url(#sh)"});g.insertBefore(rc,t);
-    posEls.push({el:g,x:doc.x,y:doc.y,kind:"note"});g.setAttribute("transform","translate("+doc.x+","+doc.y+") scale("+1/view.k+")");return g}
+    var pe={el:g,x:doc.x,y:doc.y,kind:"note",zr:doc.zr||1};posEls.push(pe);g.setAttribute("transform","translate("+doc.x+","+doc.y+") scale("+posScale(pe,1/view.k)+")");return g}
   g=el("g",{class:"ink"+(isSel?" sel":""),"data-ink":id||""},gInk);
   if(doc.kind==="pen")el("path",{d:outline(doc.pts,doc.w),fill:doc.color},g);
   else if(doc.kind==="hl")el("path",{d:smoothLine(doc.pts),fill:"none",stroke:doc.color,"stroke-width":doc.w,"stroke-linecap":"round","stroke-linejoin":"round",opacity:.35,style:"mix-blend-mode:multiply"},g);
@@ -1463,7 +1466,7 @@ function eraseAt(cx,cy){[[0,0],[7,0],[-7,0],[0,7],[0,-7]].forEach(function(o){va
 function openText(cx,cy,w){var ex=$("tinput");if(ex)ex.remove();var a=$("app").getBoundingClientRect();
   var inp=h("input",{type:"text",id:"tinput",maxLength:120,placeholder:"Type a note, press Enter"});inp.style.left=Math.min(cx-a.left-20,a.width-200)+"px";inp.style.top=(cy-a.top-18)+"px";inp.style.color=inkColor;
   $("app").appendChild(inp);setTimeout(function(){inp.focus()},0);var done=false;
-  function commit(){if(done)return;done=true;var v=inp.value.trim();inp.remove();if(v&&canWrite)addInk({kind:"text",color:inkColor,text:v,x:r1(w.x),y:r1(w.y)})}
+  function commit(){if(done)return;done=true;var v=inp.value.trim();inp.remove();if(v&&canWrite)addInk({kind:"text",color:inkColor,text:v,x:r1(w.x),y:r1(w.y),zr:Math.round(view.k/kfit*1000)/1000})}
   inp.addEventListener("keydown",function(ev){if(ev.key==="Enter")commit();if(ev.key==="Escape"){done=true;inp.remove()}ev.stopPropagation()});inp.addEventListener("blur",commit)}
 
 document.addEventListener("keydown",function(e){var tag=(e.target.tagName||"").toLowerCase();if(tag==="input"||tag==="textarea")return;
@@ -2018,9 +2021,9 @@ var TOUR=[
  {ic:"star",el:"#card",art:5,t:"Markers from your Google map",b:"Tap any marker to read its note, like this one at Rapid 3. You can give it a colour, attach icons such as a lifeguard or a hazard, and add your own notes.",enter:function(){var id=r3mark();if(id){select({kind:"mark",id:id});var m=markById(id);go(centreOn(m.x,m.y,Math.max(view.k,kfit*3.2)))}}},
  {ic:"layers",el:"#pLayers",art:6,t:"Layers",b:"Switch groups of markers on or off. “Satellite photo” puts real imagery under the river (website version). “Hide old 2014–2016 markers” keeps the old stations out of the way. The target button flies the map to a layer.",enter:function(){select(null);closePops();$("pLayers").hidden=false;$("bLayers").setAttribute("aria-expanded","true");renderLayers()}},
  {ic:"race",el:"#dock",art:7,t:"Race kit",b:"Drag a counter from the dock onto the river. It settles on the nearest bank: river-left, mid-river or river-right. Counters that overlap stack into a numbered disc; tap it to split them.",enter:function(){closePops();setTab("race")}},
- {ic:"safety",el:"#dock",art:8,t:"Safety",b:"Ambulances, first aid posts, lifeguards and throw ropes. Tap any counter on the map to label it, move it to the other bank, duplicate it or remove it. Anyone logged in can leave a comment on any icon; a purple bubble shows how many.",enter:function(){setTab("safety")}},
+ {ic:"safety",el:"#dock",art:8,t:"Safety",b:"Ambulances, first aid posts, lifeguards, throw ropes and drinking water. Tap any counter on the map to label it, move it to the other bank, duplicate it or remove it. Anyone logged in can leave a comment on any icon; a purple bubble shows how many.",enter:function(){setTab("safety")}},
  {ic:"hazard",el:"#dock",art:9,t:"Hazards",b:"Strainers, debris, sharp rocks and wires are yellow diamonds, so they stand out from everything else on the board.",enter:function(){setTab("hazard")}},
- {ic:"pinI",el:"#dock",art:10,t:"Waypoints",b:"Drop a waypoint anywhere, name it and pick a colour. Then tap it and tap or drag icons onto it, like Rest, Water or a hazard. Drag a chip out of its card to take it off.",enter:function(){setTab("point")}},
+ {ic:"pinI",el:"#dock",art:10,t:"Waypoints",b:"Drop a waypoint anywhere, name it and pick a colour. Then tap it and tap or drag icons onto it, like Rest, Food or a hazard. Drag a chip out of its card to take it off.",enter:function(){setTab("point")}},
  {ic:"pen",el:"#dock",art:11,t:"Draw on the map",b:"Apple Pencil or the mouse draws while your finger still moves the map. Choose pen, marker, arrow, text note or eraser in six colours. Tap ✕ or press Esc to stop drawing.",enter:function(){setTab("draw")}},
  {ic:"undo",el:".undo",art:12,t:"Undo",b:"Reverses your last change: a placed counter, a move, a drawing, an icon. Ctrl+Z works too.",enter:function(){setTool(null);setTab("race")}},
  {ic:"pinI",el:"#bRiver",art:99,t:"River mode",b:"For reporting from the water, with GPS and big buttons. It has its own short guide that opens the first time you turn it on, and a ? button in River mode to see it again."},
@@ -2489,7 +2492,7 @@ function cleanIcons(a){return Array.isArray(a)?a.filter(function(t){return typeo
 function cleanWp(id,v){if(!v)return null;return{id:id,name:typeof v.name==="string"?v.name.slice(0,40):"",color:hex(v.color)||"#d7263d",notes:typeof v.notes==="string"?v.notes.slice(0,2000):"",icons:cleanIcons(v.icons),x:num(v.x,600),y:num(v.y,500),rep:cleanRep(v.rep),photo:cleanPid(v.photo),photos:cleanPids(v.photos),locked:v.locked===true,cr:cleanCr(v.cr),tm:cleanTm(v.tm),st:v.st==="dot"?"dot":undefined}}
 function cleanMx(v){if(!v)return null;var o={color:hex(v.color),notes:typeof v.notes==="string"?v.notes.slice(0,2000):"",icons:cleanIcons(v.icons),photo:cleanPid(v.photo),photos:cleanPids(v.photos),locked:v.locked===true};if(typeof v.gnote==="string"){o.gnote=v.gnote.slice(0,600);o.gnBy=typeof v.gnBy==="string"?v.gnBy.slice(0,40):"";o.gnAt=typeof v.gnAt==="number"?v.gnAt:0}return o}
 function cleanInk(v){if(!v||["pen","hl","arrow","text"].indexOf(v.kind)<0)return null;var c=hex(v.color)||"#111418";
-  var cr=cleanCr(v.cr);if(v.kind==="text"){if(typeof v.text!=="string"||!v.text.trim())return null;var tx={kind:"text",color:c,text:v.text.slice(0,120),x:num(v.x,0),y:num(v.y,0)};if(cr)tx.cr=cr;return tx}
+  var cr=cleanCr(v.cr);if(v.kind==="text"){if(typeof v.text!=="string"||!v.text.trim())return null;var tx={kind:"text",color:c,text:v.text.slice(0,120),x:num(v.x,0),y:num(v.y,0)};if(cr)tx.cr=cr;var zr=num(v.zr,0);if(zr>0&&zr<100)tx.zr=zr;return tx}
   if(!Array.isArray(v.pts)||v.pts.length<3||v.pts.length>9000||v.pts.length%3)return null;for(var i=0;i<v.pts.length;i++)if(typeof v.pts[i]!=="number"||!isFinite(v.pts[i]))return null;
   var o3={kind:v.kind,color:c,w:Math.max(.05,Math.min(80,num(v.w,2))),pts:v.pts};if(cr)o3.cr=cr;return o3}
 function startShared(store_){db=store_;items=new Map();notes={};ink=new Map();wps=new Map();mo={};renderItems();renderInk();renderPins();renderCard();setStatus("Loading plan","");
