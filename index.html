@@ -2125,18 +2125,30 @@ var jsLoad=null;
 function loadJsPDF(){if(window.jspdf)return Promise.resolve();if(jsLoad)return jsLoad;
   jsLoad=new Promise(function(res,rej){var sc=document.createElement("script");sc.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";sc.onload=function(){res()};sc.onerror=function(){jsLoad=null;rej(new Error("The PDF library did not load. Check your connection."))};document.head.appendChild(sc)});return jsLoad}
 var SNAP_PROPS=["display","fill","fill-opacity","stroke","stroke-width","stroke-opacity","stroke-linecap","stroke-linejoin","stroke-dasharray","opacity","font-size","font-weight","paint-order","vector-effect","mix-blend-mode"];
+/* PDF pages: turn the map so the river's main direction runs across the landscape page (never more than 90°, so north is never down) */
+function rotFrame(pts,W,H,pad,maxK){var n=pts.length,mx=0,my=0;pts.forEach(function(q){mx+=q[0];my+=q[1]});mx/=n;my/=n;var sxx=0,syy=0,sxy=0;pts.forEach(function(q){var dx=q[0]-mx,dy=q[1]-my;sxx+=dx*dx;syy+=dy*dy;sxy+=dx*dy});
+  var phi=0.5*Math.atan2(2*sxy,sxx-syy),th=-phi;while(th>Math.PI/2)th-=Math.PI;while(th<=-Math.PI/2)th+=Math.PI;if(Math.abs(th)<10*Math.PI/180)th=0;
+  var c=Math.cos(th),si=Math.sin(th),x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;pts.forEach(function(q){var x=q[0]*c-q[1]*si,y=q[0]*si+q[1]*c;x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y)});
+  var bw=x1-x0+pad*2,bh=y1-y0+pad*2,k=Math.min(W/bw,H/bh);if(maxK&&k>maxK)k=maxK;return{k:k,tx:W/2-(x0+x1)/2*k,ty:H/2-(y0+y1)/2*k,rot:th}}
+function northArrow(doc,x,y,th){var dx=Math.sin(th),dy=-Math.cos(th),L=5.2;doc.setFillColor(255,255,255);doc.setDrawColor(214,220,229);doc.setLineWidth(.3);doc.circle(x,y,6.4,"FD");
+  doc.setFillColor(215,38,61);doc.triangle(x+dx*L,y+dy*L,x-dy*1.9,y+dx*1.9,x+dy*1.9,y-dx*1.9,"F");doc.setFillColor(200,208,219);doc.triangle(x-dx*L,y-dy*L,x-dy*1.9,y+dx*1.9,x+dy*1.9,y-dx*1.9,"F");
+  doc.setFont("helvetica","bold");doc.setFontSize(6.5);doc.setTextColor(17,20,24);doc.text("N",x+dx*(L+3.2),y+dy*(L+3.2)+1.1,{align:"center"})}
 function frameView(x0,y0,x1,y1,W,H,pad){var bw=x1-x0+pad*2,bh=y1-y0+pad*2,k=Math.min(W/bw,H/bh);return{k:k,tx:W/2-(x0+x1)/2*k,ty:H/2-(y0+y1)/2*k}}
 function snapshot(target,W,H,lv,hiSec){
   var saveV={k:view.k,tx:view.tx,ty:view.ty},saveSel=sel,selEls=[].slice.call(svg.querySelectorAll(".sel"));
   selEls.forEach(function(e){e.classList.remove("sel")});sel=null;if(hiSec)hiSec.g.classList.add("sel");
   svg.classList.add("snap");forceLevel=lv;view=target;apply();renderItems();renderWps();renderInk();declutter();
-  if(layerOn.sat)updSat({x0:-target.tx/target.k,y0:-target.ty/target.k,x1:(W-target.tx)/target.k,y1:(H-target.ty)/target.k},target.k);
+  var th=target.rot||0;
+  if(layerOn.sat){var cc=Math.cos(-th),ss=Math.sin(-th),bx={x0:1e9,y0:1e9,x1:-1e9,y1:-1e9};[[0,0],[W,0],[0,H],[W,H]].forEach(function(p){var u=(p[0]-target.tx)/target.k,v=(p[1]-target.ty)/target.k,x=u*cc-v*ss,y=u*ss+v*cc;bx.x0=Math.min(bx.x0,x);bx.y0=Math.min(bx.y0,y);bx.x1=Math.max(bx.x1,x);bx.y1=Math.max(bx.y1,y)});updSat(bx,target.k)}
   var orig=[].slice.call(svg.querySelectorAll("*")),cl=svg.cloneNode(true),cls=[].slice.call(cl.querySelectorAll("*")),kill=[];
   for(var i=0;i<orig.length;i++){var o=orig[i];if(o.closest("defs"))continue;var cs=getComputedStyle(o);
     if(cs.display==="none"||o.classList.contains("hid")){kill.push(cls[i]);continue}
     var st="";SNAP_PROPS.forEach(function(p){var v=cs.getPropertyValue(p);if(v)st+=p+":"+v+";"});
     if(o.tagName==="text")st+="font-family:'Arial Narrow','Helvetica Neue',Arial,Helvetica,sans-serif;";cls[i].setAttribute("style",st)}
   kill.forEach(function(n){if(n.parentNode)n.parentNode.removeChild(n)});
+  if(th){var deg=th*180/Math.PI,wg=cl.querySelector("#world");if(wg)wg.setAttribute("transform","translate("+target.tx+","+target.ty+") scale("+target.k+") rotate("+deg+")");
+    /* keep icons and labels upright; things drawn along the river (flow arrows, ticks, road names) turn with it */
+    [].slice.call(cl.querySelectorAll("#world g[transform]")).forEach(function(g){var t=g.getAttribute("transform");if(!/^translate\([^)]*\) scale\([^)]*\)$/.test(t))return;if(g.closest("#gRiver")||g.querySelector("text[transform*='rotate'],g[transform*='rotate']"))return;g.setAttribute("transform",t.replace(") scale(",") rotate("+(-deg)+") scale("))})}
   cl.removeAttribute("id");cl.removeAttribute("class");cl.removeAttribute("style");cl.setAttribute("xmlns",NS);cl.setAttribute("width",W);cl.setAttribute("height",H);
   var bg=document.createElementNS(NS,"rect");bg.setAttribute("width",W);bg.setAttribute("height",H);bg.setAttribute("fill","#f2f4f7");cl.insertBefore(bg,cl.querySelector("defs").nextSibling);
   svg.classList.remove("snap");if(layerOn.sat)schedSat();if(hiSec)hiSec.g.classList.remove("sel");selEls.forEach(function(e){e.classList.add("sel")});sel=saveSel;forceLevel=0;view=saveV;apply();renderItems();renderWps();renderInk();
@@ -2179,7 +2191,7 @@ async function doExport(opts){opts=opts&&opts.snap?opts:{};if(exporting)return;
     box(M+4*(bw+4),by,bw,bh,"Flash flood risk",fo?fo[1]:"Not set",fo?fo[2]:"#ffffff",fo?fo[3]:"#5b6573");
     var W0=1340,H0=Math.round(1340*(200-56)/CW);setXmsg("Drawing the whole river…");
     var x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;P.forEach(function(q){x0=Math.min(x0,q[0]);y0=Math.min(y0,q[1]);x1=Math.max(x1,q[0]);y1=Math.max(y1,q[1])});
-    var img=await raster(snapshot(frameView(x0,y0,x1,y1,W0,H0,60),W0,H0,1),W0,H0);doc.setDrawColor(214,220,229);doc.setLineWidth(.3);doc.addImage(img,"JPEG",M,56,CW,CW*H0/W0);doc.rect(M,56,CW,CW*H0/W0);
+    var fvAll=rotFrame(P,W0,H0,60),img=await raster(snapshot(fvAll,W0,H0,1),W0,H0);doc.setDrawColor(214,220,229);doc.setLineWidth(.3);doc.addImage(img,"JPEG",M,56,CW,CW*H0/W0);doc.rect(M,56,CW,CW*H0/W0);northArrow(doc,M+CW-12,56+12,fvAll.rot);
     var tot={race:0,safety:0,hazard:0};items.forEach(function(it){var t=TYPE[it.type];if(t&&tot[t.fam]!=null)tot[t.fam]++});
     doc.setFontSize(8.5);doc.setFont("helvetica","normal");doc.setTextColor(91,101,115);
     doc.text(pdfText("Whole run, Rapid 0 to Hussein Bridge, about "+(TOTAL*MPU/1000).toFixed(1)+" km. On the map: "+tot.race+" race kit, "+tot.safety+" safety, "+tot.hazard+" hazard counters, "+wps.size+" waypoints, "+ink.size+" drawings and notes."),M,204);
@@ -2188,8 +2200,8 @@ async function doExport(opts){opts=opts&&opts.snap?opts:{};if(exporting)return;
     for(var si=0;si<SECS.length;si++){var s=SECS[si];setXmsg("Drawing section "+s.n+" of "+SECS.length+"…");doc.addPage();
       head("Section "+s.n+"  "+s.name,"km "+(CUM[s.a]*MPU/1000).toFixed(2)+" to "+(CUM[s.b]*MPU/1000).toFixed(2)+"  |  about "+s.len+" m  |  "+s.frm+" to "+s.to);
       var sx0=1e9,sy0=1e9,sx1=-1e9,sy1=-1e9;for(var i=s.a;i<=s.b;i++){sx0=Math.min(sx0,P[i][0]);sy0=Math.min(sy0,P[i][1]);sx1=Math.max(sx1,P[i][0]);sy1=Math.max(sy1,P[i][1])}
-      var W1=1360,H1=Math.round(1360*124/CW),fv=frameView(sx0,sy0,sx1,sy1,W1,H1,45),fk=frameView(x0,y0,x1,y1,W1,H1,60).k;if(fv.k>fk*7){var cxx=(sx0+sx1)/2,cyy=(sy0+sy1)/2;fv={k:fk*7,tx:W1/2-cxx*fk*7,ty:H1/2-cyy*fk*7}}
-      var im=await raster(snapshot(fv,W1,H1,2,s),W1,H1);doc.addImage(im,"JPEG",M,20,CW,124);doc.setDrawColor(214,220,229);doc.rect(M,20,CW,124);
+      var W1=1360,H1=Math.round(1360*124/CW),fk=frameView(x0,y0,x1,y1,W1,H1,60).k,fv=rotFrame(P.slice(s.a,s.b+1),W1,H1,40,fk*10);
+      var im=await raster(snapshot(fv,W1,H1,2,s),W1,H1);doc.addImage(im,"JPEG",M,20,CW,124);doc.setDrawColor(214,220,229);doc.rect(M,20,CW,124);northArrow(doc,M+CW-12,20+12,fv.rot);
       var f=sectionFacts(s),cw=(CW-12)/3,cy=150;
       function col(ix,title,lines){var x=M+ix*(cw+6),y=cy;doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(91,101,115);doc.text(title.toUpperCase(),x,y);y+=5;
         doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(17,20,24);if(!lines.length){doc.setTextColor(152,162,176);doc.text("None",x,y);doc.setTextColor(17,20,24);return}
