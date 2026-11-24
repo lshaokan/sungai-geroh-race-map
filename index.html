@@ -546,7 +546,7 @@ html,body{overscroll-behavior:none}
   .tl .rbtn,.tl .mebtn{order:0;margin:0}.tl .mebtn{width:auto;min-width:40px;padding:0 10px 0 6px}.tl .mebtn span{display:inline;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #bMenu{display:grid;place-items:center;order:5}
   .tc{padding:3px 6px 4px}.rends,.rbot{display:none}.rtop{height:11px}.rtrack{height:26px}.rseg{font-size:12px;min-width:0}
-  .compass{display:none}.vstack{padding:3px}.vb{width:42px;height:40px}.vb span{display:none}
+  .compass{display:none}.vstack,.clrstack{padding:3px}.vb{width:42px;height:40px}.vb span{display:none}
   #dock{padding:4px 6px}#dock.shut .tray{display:none}#dock.shut .tabs,#dock.shut .undo{border-bottom:0;padding-bottom:0}
   .tab{min-height:48px;padding-top:4px;padding-bottom:4px}
   #card{background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none;grid-area:4/1/6/3;max-height:58vh;margin:0 -10px -6px;border-radius:20px 20px 0 0;padding:6px 16px calc(16px + env(safe-area-inset-bottom,0px));gap:10px;box-shadow:0 -10px 30px -12px rgba(17,20,24,.35)}
@@ -603,7 +603,7 @@ html,body{overscroll-behavior:none}
         <button class="vb" id="lv2" type="button" aria-pressed="false" title="One section"></button>
         <button class="vb" id="lv3" type="button" aria-pressed="false" title="Close-up detail"></button>
       </div>
-      <div class="clrstack plate"><button class="ib" id="bClear" type="button" aria-label="Clear: pick things to delete" title="Clear: tap things to pick them, then delete them together"></button></div>
+      <div class="clrstack plate"><button class="vb" id="bClear" type="button" aria-label="Clear: pick things to delete" title="Clear: tap things to pick them, then delete them together"></button></div>
       <div class="zstack plate"><button class="ib" id="zin" type="button" aria-label="Zoom in" title="Zoom in"></button><button class="ib" id="zout" type="button" aria-label="Zoom out" title="Zoom out"></button></div>
     </div>
     <aside id="card" class="plate" hidden aria-live="polite"></aside>
