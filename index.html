@@ -673,7 +673,7 @@ var IC={
  arrow:'<path d="M5 19L18 6" '+S+' stroke-width="2.1"/><path d="M10 6h8v8" '+S+' stroke-width="2.1"/>',
  text:'<path d="M6 6.5h12M12 6.5V19M9.5 19h5" '+S+' stroke-width="2.1"/>',
  erase:'<path d="M8.6 19.5L3.9 14.8a1.8 1.8 0 0 1 0-2.5l8.4-8.4a1.8 1.8 0 0 1 2.5 0l4.8 4.8a1.8 1.8 0 0 1 0 2.5l-8.1 8.3z" '+S+'/><path d="M8.6 19.5H20M8.8 9.4l5.8 5.8" '+S+'/>',
- logistics:'<path d="M3.5 7.5L12 3l8.5 4.5v9L12 21l-8.5-4.5z" '+S+'/><path d="M3.5 7.5L12 12l8.5-4.5M12 12v9" '+S+'/>',
+ logistics:'<path d="M2.5 6.5h11v9.5h-11z" '+S+'/><path d="M13.5 9.5h4l3.5 3.5v3h-7.5z" '+S+'/><circle cx="6.5" cy="17.5" r="1.9" '+S+'/><circle cx="17" cy="17.5" r="1.9" '+S+'/>',
  race:'<path d="M7 21V3.8M7.6 4.3l10.4 3.2-10.4 3.7" '+S+' stroke-width="2"/>',
  safety:'<path d="M9.4 3.8h5.2v5.6h5.6v5.2h-5.6v5.6H9.4v-5.6H3.8V9.4h5.6z" '+S+'/>',
  hazard:'<path d="M12 3.2l8.8 8.8-8.8 8.8L3.2 12z" '+S+'/><path d="M12 8.4v4.4" '+S+' stroke-width="2.1"/><circle cx="12" cy="15.7" r="1.15" fill="currentColor"/>',
@@ -745,7 +745,7 @@ var G={
 var TYPES=[
  {id:"start",fam:"race",name:"Start",short:"Start"},{id:"finish",fam:"race",name:"Finish",short:"Finish"},
  {id:"tube",fam:"logistics",name:"River tube",short:"Tube"},{id:"flag",fam:"race",name:"Tribe flag",short:"Flag",color:"#d7263d"},
- {id:"station",fam:"race",name:"Game station",short:"Station"},{id:"boat",fam:"race",name:"Boat",short:"Boat",hide:1},{id:"truck",fam:"race",name:"Lorry",short:"Lorry"},
+ {id:"station",fam:"race",name:"Game station",short:"Station"},{id:"boat",fam:"race",name:"Boat",short:"Boat",hide:1},{id:"truck",fam:"logistics",name:"Lorry",short:"Lorry"},
  {id:"ambulance",fam:"safety",name:"Ambulance",short:"Ambulance"},{id:"firstaid",fam:"safety",name:"First aid post",short:"First aid"},
  {id:"marshal",fam:"safety",name:"Lifeguard",short:"Lifeguard"},{id:"rope",fam:"safety",name:"Throw rope",short:"Rope"},
  {id:"strainer",fam:"hazard",name:"Strainer",short:"Strainer"},{id:"debris",fam:"hazard",name:"Debris",short:"Debris"},{id:"rocks",fam:"hazard",name:"Sharp rocks",short:"Rocks"},
@@ -1553,7 +1553,7 @@ function lrow(key,glyph,name,count,locate){var id="ly-"+key,cb=h("input",{type:"
   kids.push(cb);return h("div",{className:"lrow"},kids)}
 function renderLayers(){var p=$("pLayers");p.textContent="";p.appendChild(popDone());
   p.appendChild(h("h4",{text:"Your plan"}));
-  var SAMPLE={race:"flag",safety:"ambulance",hazard:"strainer",logistics:"tube"};
+  var SAMPLE={race:"flag",safety:"ambulance",hazard:"strainer",logistics:"truck"};
   ["race","safety","hazard","logistics"].forEach(function(f){var n=0;items.forEach(function(it){if(TYPE[it.type]&&TYPE[it.type].fam===f)n++});
     p.appendChild(lrow(f,'<svg viewBox="-17 -17 34 34">'+token(TYPE[SAMPLE[f]])+'</svg>',FAM[f].name,n+" placed",n?function(){findNext(f)}:null))});
   p.appendChild(lrow("wp",'<svg viewBox="-17 -17 34 34">'+token(TYPE.waypoint)+'</svg>',"Waypoints",wps.size+" placed",wps.size?function(){findNext("wp")}:null));
