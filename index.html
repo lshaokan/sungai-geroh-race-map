@@ -2417,8 +2417,8 @@ var cmCount={},cmSub=null,cmDraft={};
 function cmN(key){return Math.max(0,+cmCount[key]||0)}
 function cmBadge(n,x,y,k){return '<g class="cmb" transform="translate('+x+','+y+')'+(k?' scale('+k+')':'')+'"><path d="M-8.5-7h17a2.5 2.5 0 0 1 2.5 2.5v6.5a2.5 2.5 0 0 1-2.5 2.5H-.5l-4.5 4V4.5h-3.5A2.5 2.5 0 0 1-11 2v-6.5A2.5 2.5 0 0 1-8.5-7z" fill="#7b2cbf" stroke="#fff" stroke-width="1.4"/><text y="2.4" text-anchor="middle" fill="#fff" style="font:700 8px var(--map)">'+(n>9?"9+":n)+'</text></g>'}
 var leadOff=null;
-function watchLead(){if(leadOff){leadOff();leadOff=null}if(!fbFs||!myPk){if(myLead){myLead="";renderAcct()}return}
-  leadOff=fbFs.doc("leads/"+myPk).onSnapshot(function(d){var nd=d.exists?String((d.data()||{}).dept||""):"";if(nd===myLead)return;myLead=nd;renderAcct();renderCard()},function(){})}
+function watchLead(){if(leadOff){leadOff();leadOff=null}if(myRole==="lead"&&myLead!==myDept){myLead=myDept;renderAcct()}if(!fbFs||!myPk){if(myLead&&myRole!=="lead"){myLead="";renderAcct()}return}
+  leadOff=fbFs.doc("leads/"+myPk).onSnapshot(function(d){var nd=(d.exists?String((d.data()||{}).dept||""):"")||(myRole==="lead"?myDept:"");if(nd===myLead)return;myLead=nd;renderAcct();renderCard()},function(){if(myRole==="lead"&&myLead!==myDept){myLead=myDept;renderAcct();renderCard()}})}
 /* things put down before departments were recorded: an admin's device fills in the department from the member list, once */
 function backfillDept(){if(!fbFs||myRole!=="admin")return;fbFs.collection("members").get().then(function(sn){var dep={},pks={};sn.forEach(function(d){var v=d.data()||{};if(v.dept)dep[d.id]=v.dept;var k=pkOfMember(v);if(k)pks[d.id]=k});var n=0;
   [["items",items],["waypoints",wps],["ink",ink]].forEach(function(p){p[1].forEach(function(o,id){var c=o&&o.cr;if(!c||!c.uid||n>=300)return;var up={};if(!c.dept&&dep[c.uid]){up["cr.dept"]=dep[c.uid];c.dept=dep[c.uid]}if(!c.pk&&pks[c.uid]){up["cr.pk"]=pks[c.uid];c.pk=pks[c.uid]}
@@ -2580,7 +2580,7 @@ async function startFirebase(){var B="https://www.gstatic.com/firebasejs/10.12.2
     try{await fbFs.enablePersistence({synchronizeTabs:true})}catch(_){}
     var cred=await firebase.auth().signInAnonymously();fbUid=cred.user.uid;
     var mem=null;try{mem=await fbFs.doc("members/"+fbUid).get()}catch(_){}
-    if(mem&&mem.exists){var md=mem.data()||{};myRole=md.role==="admin"?"admin":"editor";if(typeof md.name==="string"&&md.name)myName=md.name.slice(0,40);if(typeof md.dept==="string")myDept=md.dept.slice(0,40);
+    if(mem&&mem.exists){var md=mem.data()||{};myRole=md.role==="admin"?"admin":md.role==="lead"?"lead":"editor";if(typeof md.name==="string"&&md.name)myName=md.name.slice(0,40);if(typeof md.dept==="string")myDept=md.dept.slice(0,40);
       myPk=pkOfMember(md);if(myPk&&md.pk!==myPk)fbFs.doc("members/"+fbUid).update({pk:myPk}).catch(function(){})}else myRole="viewer";
     setWrite(myRole!=="viewer");startShared(fbFs);startComments();startFeed();watchLead();if(myRole==="admin")setTimeout(backfillDept,6000);logVisit();handleInvite();
   }catch(e){setStatus("Offline · on this device","warn")}}
@@ -2604,35 +2604,37 @@ function joinSheet(mode,code){if(!fbFs)return;mode=mode==="admin"?"admin":"edito
   var fn=h("input",{type:"text",className:"inp",id:"jFirst",maxLength:24,placeholder:"First name",autocomplete:"given-name",autocapitalize:"words","aria-label":"First name"});fn.value=keepF||"";
   var ln=h("input",{type:"text",className:"inp",id:"jLast",maxLength:24,placeholder:"Last name",autocomplete:"family-name",autocapitalize:"words","aria-label":"Last name"});ln.value=keepL||"";
   var dp=deptSelect(keepD),cd=null;
-  if(mode==="admin"){cd=h("input",{type:"password",className:"inp",id:"jCode",maxLength:60,placeholder:"Admin code",autocomplete:"off",autocapitalize:"none"});cd.value=code||""}
-  var msg=h("span",{className:"xmsg"}),go2=h("button",{type:"button",className:"btn primary big",text:mode==="admin"?"Log in as admin":"Log in"}),cl=h("button",{type:"button",className:"btn big",text:"Not now"});
+  if(mode==="admin"){cd=h("input",{type:"password",className:"inp",id:"jCode",maxLength:60,placeholder:"Lead or admin code",autocomplete:"off",autocapitalize:"none"});cd.value=code||""}
+  var msg=h("span",{className:"xmsg"}),go2=h("button",{type:"button",className:"btn primary big",text:mode==="admin"?"Log in":"Log in"}),cl=h("button",{type:"button",className:"btn big",text:"Not now"});
   cl.onclick=function(){m.hidden=true};
   [fn,ln,dp,cd].forEach(function(f){if(f)f.addEventListener(f.tagName==="SELECT"?"change":"input",function(){f.classList.remove("bad")})});
   go2.onclick=async function(){var f1=tidyName(fn.value),l1=tidyName(ln.value),n=f1+" "+l1,d=dp.value,c=cd?cd.value.trim():"",bad=[],why=[];
-    if(!hasLetter(f1)){bad.push(fn);why.push("your first name")}if(!hasLetter(l1)){bad.push(ln);why.push("your last name")}if(!d){bad.push(dp);why.push("your department")}if(cd&&!c){bad.push(cd);why.push("the admin code")}
+    if(!hasLetter(f1)){bad.push(fn);why.push("your first name")}if(!hasLetter(l1)){bad.push(ln);why.push("your last name")}if(!d){bad.push(dp);why.push("your department")}if(cd&&!c){bad.push(cd);why.push("the code")}
     if(bad.length){buzz(bad);msg.textContent="Add "+why.join(", ").replace(/, ([^,]*)$/," and $1")+".";bad[0].focus();return}fn.value=f1;ln.value=l1;
     go2.disabled=true;msg.textContent="Logging in…";var pk=personKey(f1,l1,d),data={name:n,first:f1,last:l1,dept:d,role:mode,at:Date.now(),dev:devName()};if(pk)data.pk=pk;if(cd)data.code=c;
-    try{await fbFs.doc("members/"+fbUid).set(data);var was=myRole;myRole=mode;myName=n;myDept=d;myPk=pk;watchLead();
+    try{var got=mode;if(cd){try{data.role="admin";await fbFs.doc("members/"+fbUid).set(data);got="admin"}catch(e1){if(!e1||e1.code!=="permission-denied")throw e1;data.role="lead";await fbFs.doc("members/"+fbUid).set(data);got="lead"}}
+      else await fbFs.doc("members/"+fbUid).set(data);
+      var was=myRole;myRole=got;myName=n;myDept=d;myPk=pk;watchLead();
       try{localStorage.setItem("geroh-name",n);localStorage.setItem("geroh-dept",d)}catch(_){}
-      m.hidden=true;setWrite(true);logAct(mode==="admin"?(was==="editor"?"became admin":"joined as admin"):"joined","","");
-      showHint(ico("ok"),mode==="admin"?"You're in as admin":"You're in. Changes you make are shared with the team.",false);
+      m.hidden=true;setWrite(true);logAct(got==="admin"?(was==="editor"?"became admin":"joined as admin"):got==="lead"?"joined as lead":"joined","",got==="lead"?d:"");
+      showHint(ico("ok"),got==="admin"?"You're in as admin":got==="lead"?"You're in as lead of "+d+". You can change anything "+d+" put down.":"You're in. Changes you make are shared with the team.",false);
       try{if(!localStorage.getItem(TKEY))setTimeout(function(){if(tourI<0)startTour()},900)}catch(_){}}
-    catch(e){msg.textContent=e&&e.code==="permission-denied"?(mode==="admin"?"That admin code isn't right.":"Couldn't join right now. Ask an admin to check the setup."):"Couldn't join. Try again when you have signal.";if(e&&e.code==="permission-denied"&&cd){buzz([cd]);cd.select()}}
+    catch(e){msg.textContent=e&&e.code==="permission-denied"?(mode==="admin"?"That code isn't right.":"Couldn't join right now. Ask an admin to check the setup."):"Couldn't join. Try again when you have signal.";if(e&&e.code==="permission-denied"&&cd){buzz([cd]);cd.select()}}
     go2.disabled=false};
-  pnl.appendChild(h("h2",{text:mode==="admin"?"Log in as admin":"Log in to edit"}));
-  pnl.appendChild(h("p",{text:mode==="admin"?"Admins can also unlock things and see the activity and visit logs.":"Anyone can view the plan. To add things, tell us who you are. You only do this once on this device. You can change what you put down; admins can change everything."}));
+  pnl.appendChild(h("h2",{text:mode==="admin"?"Log in as lead or admin":"Log in to edit"}));
+  pnl.appendChild(h("p",{text:mode==="admin"?"Use the lead code to manage everything your department puts down, or the admin code to manage everything, unlock things and see the logs.":"Anyone can view the plan. To add things, tell us who you are. You only do this once on this device. You can change what you put down; admins can change everything."}));
   pnl.appendChild(h("div",{className:"jnames"},[fn,ln]));pnl.appendChild(dp);if(cd)pnl.appendChild(cd);
   pnl.appendChild(h("p",{className:"jnote",text:"Visits and changes are logged for the safety team."}));
   pnl.appendChild(h("div",{className:"xfoot"},[msg,cl,go2]));
-  if(mode==="editor"){var ad=h("button",{type:"button",className:"jlink",text:"Log in as admin"});ad.onclick=function(){joinSheet("admin")};pnl.appendChild(ad)}
-  else{var bk=h("button",{type:"button",className:"jlink",text:"Log in without admin"});bk.onclick=function(){joinSheet("editor")};if(myRole!=="editor")pnl.appendChild(bk)}
+  if(mode==="editor"){var ad=h("button",{type:"button",className:"jlink",text:"Log in as lead or admin"});ad.onclick=function(){joinSheet("admin")};pnl.appendChild(ad)}
+  else{var bk=h("button",{type:"button",className:"jlink",text:"Log in without a code"});bk.onclick=function(){joinSheet("editor")};if(myRole==="viewer")pnl.appendChild(bk)}
   setTimeout(function(){(!fn.value?fn:!ln.value?ln:cd&&!cd.value?cd:!dp.value?dp:go2).focus()},60)}
 function accountSheet(){if(!fbFs)return;var m=$("jmodal");m.hidden=false;var pnl=$("jpanel");pnl.textContent="";
   pnl.appendChild(h("div",{className:"who"},[h("div",{style:"flex:1;min-width:0"},[h("b",{text:myName||"You"}),h("br"),h("small",{text:myDept||"No department"})]),h("span",{className:"rolebadge"+(myRole==="admin"?" admin":myLead?" lead":""),text:myRole==="admin"?"Admin":myLead?"Lead · "+myLead:"Editor"})]));
   var acts=h("div",{className:"acts"});
   if(myRole==="admin"){acts.appendChild(btn("star","Admin page: activity, visits, people",function(){m.hidden=true;openAdmin()},"primary"))}
   acts.appendChild(btn("undo","Recently deleted",function(){binSheet()}));
-  if(myRole!=="admin")acts.appendChild(btn("lock","Log in as admin",function(){joinSheet("admin")}));
+  if(myRole!=="admin")acts.appendChild(btn("lock",myRole==="lead"?"Log in as admin":"Log in as lead or admin",function(){joinSheet("admin")}));
   acts.appendChild(btn("exit","Log out",function(){logout()},"danger"));
   pnl.appendChild(acts);pnl.appendChild(h("p",{className:"jnote",text:"Logging out turns this device back to view only. Your changes stay on the map."}));
   pnl.appendChild(h("div",{className:"xfoot"},[h("span",{className:"xmsg"}),h("button",{type:"button",className:"btn big",text:"Close",onclick:function(){m.hidden=true}})]))}
@@ -2684,14 +2686,14 @@ async function openAdmin(){if(myRole!=="admin"||!fbFs)return;var m=$("amodal");m
       box2.appendChild(h("h3",{text:"Recent visits",style:"margin:4px 0 -6px;font-size:14px"}));
       box2.appendChild(table(["When","Who","Device"],V.slice(0,150).map(function(v){return[{t:when(v.at),c:"mut"},v.name?who(v)+(v.role==="admin"?" · admin":""):"Visitor",v.dev||""]})));return box2},
     People:function(){var box2=h("div",{style:"display:flex;flex-direction:column;gap:14px"}),ch={};L.forEach(function(v){if(v.uid)ch[v.uid]=(ch[v.uid]||0)+1});
-      var byP={},ms=[];M.forEach(function(v){var k=v.pk||("uid:"+v.uid);if(!byP[k]){byP[k]={name:v.name,dept:v.dept,role:v.role,at:v.at||0,pk:v.pk,uids:[],devs:0};ms.push(byP[k])}var g=byP[k];g.uids.push(v.uid);g.devs++;if(v.role==="admin")g.role="admin";if((v.at||0)>g.at)g.at=v.at});
+      var byP={},ms=[];M.forEach(function(v){var k=v.pk||("uid:"+v.uid);if(!byP[k]){byP[k]={name:v.name,dept:v.dept,role:v.role,at:v.at||0,pk:v.pk,uids:[],devs:0};ms.push(byP[k])}var g=byP[k];g.uids.push(v.uid);g.devs++;if(v.role==="admin")g.role="admin";else if(v.role==="lead"&&g.role!=="admin")g.role="lead";if((v.at||0)>g.at)g.at=v.at});
       ms.forEach(function(g){g.changes=g.uids.reduce(function(a,u){return a+(ch[u]||0)},0)});
       ms.sort(function(a,b){return(a.dept||"").localeCompare(b.dept||"")||(a.name||"").localeCompare(b.name||"")});
-      function leadBtn(v){if(v.role==="admin"||!v.pk)return"";var on=!!LD[v.pk],b=h("button",{type:"button",className:"btn"+(on?" primary":""),style:"height:34px;padding:0 10px;font-size:13px",text:on?"Lead ✓":"Make lead"});
+      function leadBtn(v){if(v.role==="admin"||!v.pk)return"";if(v.role==="lead"&&!LD[v.pk])return"Lead code";var on=!!LD[v.pk],b=h("button",{type:"button",className:"btn"+(on?" primary":""),style:"height:34px;padding:0 10px;font-size:13px",text:on?"Lead ✓":"Make lead"});
         b.title=on?"Leads "+LD[v.pk]+". Tap to remove.":(v.dept?"Let "+(v.name||"them")+" edit everything "+v.dept+" put down":"Needs a department first");if(!v.dept&&!on)b.disabled=true;
         b.onclick=function(){b.disabled=true;var p2=on?fbFs.doc("leads/"+v.pk).delete():fbFs.doc("leads/"+v.pk).set({dept:v.dept,name:v.name||"",by:myName||"",at:Date.now()});
           p2.then(function(){if(on)delete LD[v.pk];else LD[v.pk]=v.dept;logAct(on?"removed lead":"made lead",(v.name||"Someone")+" · "+(v.dept||""),"");show("People")},function(){b.disabled=false;b.textContent="Couldn't save";b.title="Check the database rules are up to date"})};return b}
-      box2.appendChild(table(["Name","Department","Role","Devices","Last joined","Changes","Department lead"],ms.map(function(v){return[v.name||"?",v.dept||"",v.role==="admin"?"Admin":LD[v.pk]?"Lead":"Editor",{t:v.devs,c:"n"},{t:v.at?when(v.at):"",c:"mut"},{t:v.changes,c:"n"},leadBtn(v)]})));
+      box2.appendChild(table(["Name","Department","Role","Devices","Last joined","Changes","Department lead"],ms.map(function(v){return[v.name||"?",v.dept||"",v.role==="admin"?"Admin":(LD[v.pk]||v.role==="lead")?"Lead":"Editor",{t:v.devs,c:"n"},{t:v.at?when(v.at):"",c:"mut"},{t:v.changes,c:"n"},leadBtn(v)]})));
       box2.appendChild(h("p",{className:"jnote",text:"A department lead can move, edit or remove anything put down by people in their department, as well as their own things. Only admins can unlock things or change everything."}));
       var bd={};M.forEach(function(v){var k=v.dept||"No department";bd[k]=(bd[k]||0)+1});
       box2.appendChild(h("h3",{text:"By department",style:"margin:4px 0 -6px;font-size:14px"}));
