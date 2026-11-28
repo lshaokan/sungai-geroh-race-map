@@ -46,7 +46,18 @@ See `tests/README.md`. Always run the relevant tests plus `layout-audit.js` befo
 - Short plain-English summaries; no jargon. Phone, iPad (mostly portrait) and laptop all matter.
 - Commit messages end with the Co-Authored-By / Claude-Session lines the session gives you.
 
-## Next job: Geruntum map
+## Pipeline
+
+1. **Staff ↔ tribe assignments** (next). Staff follow the tribes down the river. Marcus wants a
+   simple drag-and-drop screen: a list of staff on one side, one box per tribe, drag a staff name
+   onto a tribe to assign them (drag back or to another tribe to move). Works the same with mouse,
+   finger and phone. Marcus will supply the staff list (and tribe names); until then allow adding
+   names by hand. Shared live for everyone like the rest of the plan (Firestore), changes logged.
+   Open questions for Marcus: who may change assignments (admins/leads only?), should assigned staff
+   show on the map next to each tribe's flag, should it go in the PDF.
+2. **Geruntum map**: on hold until Marcus has time (details below).
+
+## Geruntum map (on hold)
 
 Marcus wants a second map for **Sg Geruntum**, switchable with Geroh (a Geroh / Geruntum switch),
 with the same tools: sections, section strip, icons, comments, photos, River mode, PDF.
