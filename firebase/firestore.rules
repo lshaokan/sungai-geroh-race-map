@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function me() { return /databases/$(database)/documents/members/$(request.auth.uid); }
+    function isEditor() { return signedIn() && exists(me()); }
+    function isAdmin() { return isEditor() && get(me()).data.get('role', 'editor') == 'admin'; }
+    function wasLocked() { return resource.data.get('locked', false) == true; }
+    function samePlace() {
+      return request.resource.data.get('x', null) == resource.data.get('x', null)
+          && request.resource.data.get('y', null) == resource.data.get('y', null);
+    }
+    function special(col) { return col in ['members', 'log', 'visits', 'leads']; }
+    // A person = first name + last name + department (the same on every device they log in from).
+    function myPk() { return get(me()).data.get('pk', ''); }
+    // Department leads (set by admins, per person) can change anything their department put down.
+    function leadDoc() { return /databases/$(database)/documents/leads/$(myPk()); }
+    function leadOf(dept) { return dept is string && dept != ''
+      && ((get(me()).data.get('role', '') == 'lead' && get(me()).data.get('dept', '') == dept)
+          || (myPk() != '' && exists(leadDoc()) && get(leadDoc()).data.get('dept', '') == dept)); }
+    // Placed things (icons, waypoints, drawings) can be changed by whoever put them down, a lead of their department, or an admin.
+    function owned(col) { return col in ['items', 'waypoints', 'ink']; }
+    function cr() { return resource.data.get('cr', {}); }
+    function mine() { return cr().get('uid', '') == request.auth.uid || (cr().get('pk', '') != '' && cr().get('pk', '') == myPk()); }
+    function mayChange(col) { return !owned(col) || isAdmin() || mine() || leadOf(cr().get('dept', '')); }
+    // Comments: only the writer or an admin can change or delete one.
+    function commentOk(col) { return col != 'comments' || isAdmin() || mine(); }
+
+    // Who has joined. Editors need only a name; a lead needs the lead code; admin needs the admin code.
+    match /members/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 40
+        && (request.resource.data.get('role', 'editor') == 'editor'
+            || (request.resource.data.role == 'lead'
+                && request.resource.data.get('code', '') == '__LEAD_CODE__')
+            || (request.resource.data.role == 'admin'
+                && request.resource.data.get('code', '') == '__ADMIN_CODE__'));
+      allow delete: if signedIn() && (request.auth.uid == uid || isAdmin());
+    }
+
+    // Department leads: only admins can make or remove a lead.
+    match /leads/{person} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // Activity log and visit log: anyone can add their own entry, only admins can read, nobody can change or delete.
+    match /log/{id} {
+      allow create: if isEditor() && request.resource.data.uid == request.auth.uid;
+      allow read: if isAdmin();
+    }
+    match /visits/{id} {
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow read: if isAdmin();
+    }
+
+    // The plan itself. Locked things: only admins can move, delete or unlock them.
+    match /{col}/{doc} {
+      allow read: if signedIn() && !special(col);
+      allow create: if isEditor() && !special(col);
+      allow update: if isEditor() && !special(col) && mayChange(col) && commentOk(col)
+        && (!wasLocked() || isAdmin()
+            || (request.resource.data.get('locked', false) == true && samePlace()));
+      allow delete: if isEditor() && !special(col) && mayChange(col) && commentOk(col) && (!wasLocked() || isAdmin());
+    }
+  }
+}

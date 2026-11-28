@@ -1,0 +1,21 @@
+const {chromium}=require('playwright');
+const init=()=>{window.__EMU={auth:'http://127.0.0.1:9099',fs:8081};try{localStorage.setItem('geroh-tour-done-v1','1')}catch(_){}};
+const count=p=>p.evaluate(()=>document.querySelectorAll('#gItems .item,#gItems .cluster').length);
+const st=p=>p.evaluate(()=>{const g=document.getElementById('ghost');return{armed:document.getElementById('map').classList.contains('armed'),ghost:!g.hidden,pressed:[...document.querySelectorAll('.tk[aria-pressed=true]')].map(b=>b.id),cursor:getComputedStyle(document.getElementById('map')).cursor,hint:document.getElementById('hint').classList.contains('fade')?'':document.getElementById('hint').innerText}});
+(async()=>{const b=await chromium.launch();const errs=[];
+const p=await (await b.newContext({viewport:{width:1440,height:900}})).newPage();p.on('pageerror',e=>errs.push(e.message));await p.addInitScript(init);await p.goto('http://localhost:8765/#join');await p.waitForTimeout(3500);
+await p.fill('#jFirst','Mouse');await p.fill('#jLast','User');await p.selectOption('#jDept','QM');await p.locator('#jpanel .btn.primary').click();await p.waitForTimeout(1800);await p.keyboard.press('Escape');
+const n0=await count(p);
+await p.locator('#tk-boat').click();await p.waitForTimeout(200);console.log('1 after tapping Boat:',JSON.stringify(await st(p)));
+await p.mouse.move(700,400,{steps:5});await p.waitForTimeout(100);console.log('2 hovering map:',JSON.stringify(await st(p)),'ghost at',await p.evaluate(()=>[ghost.style.left,ghost.style.top]));
+await p.screenshot({path:'t94-hover.png',clip:{x:560,y:300,width:300,height:200}});
+await p.mouse.click(700,400);await p.waitForTimeout(800);console.log('3 after click: items',n0,'->',await count(p),JSON.stringify(await st(p)));
+await p.keyboard.press('Escape');await p.mouse.click(900,600);await p.waitForTimeout(500);console.log('4 second click places nothing: items',await count(p));
+await p.locator('#tk-tube').click();await p.waitForTimeout(150);await p.keyboard.press('Escape');console.log('5 Esc cancels:',JSON.stringify(await st(p)));
+await p.locator('#tk-tube').click();await p.locator('#tk-tube').click();console.log('6 tap twice cancels:',JSON.stringify(await st(p)));
+// touch iPad
+const t=await (await b.newContext({viewport:{width:820,height:1180},hasTouch:true,isMobile:true})).newPage();t.on('pageerror',e=>errs.push(e.message));await t.addInitScript(init);await t.goto('http://localhost:8765/#join');await t.waitForTimeout(3500);
+await t.fill('#jFirst','Touch');await t.fill('#jLast','User');await t.selectOption('#jDept','QM');await t.locator('#jpanel .btn.primary').tap();await t.waitForTimeout(1800);
+const m0=await count(t);await t.locator('#tk-station').tap();await t.waitForTimeout(200);console.log('7 iPad after tapping Station:',JSON.stringify(await st(t)));
+await t.touchscreen.tap(400,600);await t.waitForTimeout(800);console.log("8 iPad tap map: items",m0,"->",await count(t));const tb=await t.locator("#tk-tube").boundingBox();await t.mouse.move(0,0);await t.evaluate(()=>0);
+console.log('errs',errs);await b.close()})();

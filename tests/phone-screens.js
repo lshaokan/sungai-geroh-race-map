@@ -1,0 +1,16 @@
+const {chromium,devices}=require('playwright');
+const init=()=>{window.__EMU={auth:'http://127.0.0.1:9099',fs:8081};try{localStorage.setItem('geroh-tour-done-v1','1')}catch(_){}};
+(async()=>{const b=await chromium.launch();
+const ctx=await b.newContext({...devices['iPhone 13']});const p=await ctx.newPage();await p.addInitScript(init);
+await p.goto('http://localhost:8765/');await p.waitForTimeout(4000);await p.addStyleTag({content:'.firebase-emulator-warning{display:none!important}'});await p.screenshot({path:'p1-viewer.png'});
+await p.locator('#bMe').tap();await p.waitForTimeout(400);await p.fill('#jFirst','Pat');await p.fill('#jLast','Lee');await p.selectOption('#jDept','QM');await p.locator('#jpanel .btn.primary').tap();await p.waitForTimeout(2000);
+await p.screenshot({path:'p1-editor.png'});
+await p.locator('.tab').first().tap();await p.waitForTimeout(400);await p.screenshot({path:'p1-tray.png'});
+const tk=await p.locator('#tk-station').boundingBox();
+await p.evaluate(([x,y])=>{const b=document.getElementById('tk-station');const ev=(t,o)=>b.dispatchEvent(new PointerEvent(t,Object.assign({bubbles:true,pointerId:3,pointerType:'touch',isPrimary:true},o)));ev('pointerdown',{clientX:x,clientY:y});for(let i=1;i<=10;i++)ev('pointermove',{clientX:x,clientY:y-i*30});ev('pointerup',{clientX:x,clientY:y-300})},[tk.x+tk.width/2,tk.y+tk.height/2]);
+await p.waitForTimeout(900);await p.screenshot({path:'p1-mini.png'});
+await p.locator('#card button',{hasText:'Details'}).tap().catch(()=>{});await p.waitForTimeout(700);await p.screenshot({path:'p1-card.png'});
+await p.locator('#card .phadd').tap().catch(()=>{});await p.waitForTimeout(500);await p.screenshot({path:'p1-chooser.png'});
+await p.locator('#jpanel button',{hasText:'Cancel'}).tap().catch(()=>{});await p.locator('#card button[aria-label=Close]').tap().catch(()=>{});await p.waitForTimeout(400);await p.screenshot({path:'p1-after.png'});
+await p.locator('#bMenu').tap();await p.waitForTimeout(400);await p.screenshot({path:'p1-menu.png'});await p.locator('#mpanel .mrow',{hasText:'Layers'}).tap();await p.waitForTimeout(500);await p.screenshot({path:'p1-layers.png'});
+await b.close()})();

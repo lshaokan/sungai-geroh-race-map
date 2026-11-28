@@ -1,0 +1,13 @@
+const {chromium}=require('playwright');
+(async()=>{const b=await chromium.launch();const errs=[];const p=await (await b.newContext({viewport:{width:1280,height:800}})).newPage();p.on('pageerror',e=>errs.push(e.message));
+await p.addInitScript(()=>{window.__EMU={auth:'http://127.0.0.1:9099',fs:8081};try{localStorage.setItem('geroh-tour-done-v1','1')}catch(_){}});await p.goto('http://localhost:8765/#join');await p.waitForTimeout(3800);
+await p.fill('#jFirst','Pat');await p.fill('#jLast','Lee');await p.selectOption('#jDept','QM');await p.locator('#jpanel .btn.primary').click();await p.waitForTimeout(1800);await p.keyboard.press('Escape');
+const note=async(x,y,txt)=>{await p.locator('.tab',{hasText:'Draw'}).click();await p.locator('.tool',{hasText:'Text'}).click();await p.mouse.click(x,y);await p.waitForTimeout(300);await p.keyboard.type(txt);await p.keyboard.press('Enter');await p.waitForTimeout(800);await p.keyboard.press('Escape')};
+const w=()=>p.evaluate(()=>[...document.querySelectorAll('#gNotes .ink')].map(g=>{const t=g.querySelector('text').textContent,q=g.getBoundingClientRect();return t+':'+(g.style.display==='none'?'hidden':Math.round(q.width))}).join('  '));
+const zin=async n=>{for(let i=0;i<n;i++){await p.locator('#zin').click();await p.waitForTimeout(450)}};const zout=async n=>{for(let i=0;i<n;i++){await p.locator('#zout').click();await p.waitForTimeout(450)}};
+await note(640,450,'Whole river note');console.log('A written zoomed out:',await w());
+await zin(4);console.log('after zooming in x6.5:',await w());
+await note(640,300,'Detail note');console.log('B written zoomed in:',await w());
+await zout(1);console.log('zoom out 1 step:',await w());await zout(1);console.log('zoom out 2 steps:',await w());await zout(2);console.log('back to whole river:',await w());
+await p.reload();await p.waitForTimeout(4000);console.log('after reload (whole river):',await w());
+console.log('errs',errs);await b.close()})();
